@@ -37,10 +37,10 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Kashhussain710 API')
-    .setDescription('Kashhussain710 API Documentation')
+    .setTitle('Arronwho API')
+    .setDescription('Arronwho API Documentation')
     .setVersion('1.0')
-    .addTag('Kashhussain710')
+    .addTag('Arronwho')
     .addBearerAuth(
       {
         type: 'http',
