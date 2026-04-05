@@ -5,7 +5,7 @@ import config from './app/config';
 export class AppService {
   getHello() {
     return {
-      name: 'Kashhussain710 Backend API',
+      name: 'Arronwho Backend API',
       status: 'ok',
       databaseEnabled: config.isMongoEnabled,
       swaggerUrl: `/api/docs`,
