@@ -9,7 +9,8 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
 import { ControllerModule } from './app/module/controller/controller.module';
 import { ExtraModule } from './app/module/extra/extra.module';
 import { FaqModule } from './app/module/faq/faq.module';
-
+import { ServiceModule } from './app/module/service/service.module';
+import { AuthModule } from './app/module/auth/auth.module';
 
 // const databaseImports = config.isMongoEnabled
 //   ? [
@@ -26,9 +27,11 @@ import { FaqModule } from './app/module/faq/faq.module';
     MongooseModule.forRoot(config.mongoUri as string),
     PaymentModule,
     WebhookModule,
+    AuthModule,
     ControllerModule,
     ExtraModule,
     FaqModule,
+    ServiceModule,
   ],
 
   controllers: [AppController],
