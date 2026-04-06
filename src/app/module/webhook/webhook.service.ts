@@ -1,14 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from '../user/entities/user.entity';
 import { Model } from 'mongoose';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
-import {
-  Subscribe,
-  SubscribeDocument,
-} from '../subscribe/entities/subscribe.entity';
 import type { Response } from 'express';
 
 @Injectable()
@@ -17,17 +12,15 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
   constructor(
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
-
-    @InjectModel(Subscribe.name)
-    private readonly subscribeModel: Model<SubscribeDocument>,
   ) {}
 
   async handleWebhook(rawBody: Buffer, sig: string, res: Response) {
+    if (!sig) {
+      throw new HttpException('Missing stripe signature', 400);
+    }
+
     let event: Stripe.Event;
     try {
       event = this.stripe.webhooks.constructEvent(
@@ -43,71 +36,40 @@ export class WebhookService {
     try {
       switch (event.type) {
         case 'payment_intent.succeeded':
-          await this.handlePaymentIntentSucceeded(event, res);
+          await this.handlePaymentIntentSucceeded(event);
           break;
 
         case 'payment_intent.payment_failed':
-          await this.handlePaymentIntentFailed(event, res);
+          await this.handlePaymentIntentFailed(event);
           break;
 
         default:
           this.logger.log(`Unhandled event type: ${event.type}`);
-          return res.json({ received: true });
+          break;
       }
     } catch (err: any) {
       this.logger.error(`Handler error: ${err.message}`);
       return res.status(500).send(`Webhook Handler Error: ${err.message}`);
     }
+
+    return res.json({ received: true });
   }
 
   // ── payment_intent.succeeded ───────────────────────────────────────────────
-  private async handlePaymentIntentSucceeded(
-    event: Stripe.Event,
-    res: Response,
-  ) {
+  private async handlePaymentIntentSucceeded(event: Stripe.Event) {
     const intent = event.data.object as Stripe.PaymentIntent;
 
     const payment = await this.paymentModel.findOne({
       stripePaymentIntentId: intent.id,
     });
-    if (!payment) return res.json({ received: true });
+    if (!payment) return;
 
     payment.status = 'completed';
     await payment.save();
-
-    const paymentType = intent.metadata?.paymentType ?? payment.paymentType;
-
-    if (paymentType === 'subscription') {
-      const subscribeId =
-        payment.subscribe?.toString() ?? intent.metadata?.subscribeId;
-      if (!subscribeId) return res.json({ received: true });
-
-      const plan = await this.subscribeModel.findById(subscribeId);
-      if (!plan) return res.json({ received: true });
-
-      // Add user to plan's users array if not already present
-      const alreadyAdded = plan.user?.some(
-        (id) => id.toString() === payment.user.toString(),
-      );
-      if (!alreadyAdded) {
-        plan.user = plan.user ?? [];
-        plan.user.push(payment.user);
-        await plan.save();
-      }
-
-      return res.json({
-        received: true,
-        type: 'subscription',
-        userId: payment.user,
-        planId: plan._id,
-      });
-    }
-
-    return res.json({ received: true });
   }
 
   // ── payment_intent.payment_failed ──────────────────────────────────────────
-  private async handlePaymentIntentFailed(event: Stripe.Event, res: Response) {
+  private async handlePaymentIntentFailed(event: Stripe.Event) {
     const intent = event.data.object as Stripe.PaymentIntent;
 
     const payment = await this.paymentModel.findOne({
@@ -117,7 +79,5 @@ export class WebhookService {
       payment.status = 'failed';
       await payment.save();
     }
-
-    return res.json({ received: true });
   }
 }

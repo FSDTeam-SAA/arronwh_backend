@@ -4,7 +4,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import config from './app/config';
-import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { PaymentModule } from './app/module/payment/payment.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { ControllerModule } from './app/module/controller/controller.module';
@@ -25,7 +24,6 @@ import { FaqModule } from './app/module/faq/faq.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(config.mongoUri as string),
-    SubscribeModule,
     PaymentModule,
     WebhookModule,
     ControllerModule,
