@@ -11,6 +11,9 @@ import { SubscribeModule } from './app/module/subscribe/subscribe.module';
 import { PaymentModule } from './app/module/payment/payment.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { ServiceModule } from './app/module/service/service.module';
+import { QuizeModule } from './app/module/quize/quize.module';
+import { BookingModule } from './app/module/booking/booking.module';
+import { DashboardModule } from './app/module/dashboard/dashboard.module';
 
 const databaseImports = config.isMongoEnabled
   ? [
@@ -26,7 +29,7 @@ const databaseImports = config.isMongoEnabled
   : [];
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), ...databaseImports, SubscribeModule, PaymentModule, WebhookModule, ServiceModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), ...databaseImports, SubscribeModule, PaymentModule, WebhookModule, ServiceModule, QuizeModule, BookingModule, DashboardModule],
   controllers: [AppController],
   providers: [AppService],
 })
