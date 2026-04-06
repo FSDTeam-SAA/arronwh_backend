@@ -21,12 +21,19 @@ const uploadConfig = {
 const uploadToCloudinary = async (
   file: Express.Multer.File,
 ): Promise<{ url: string; public_id: string }> => {
-  if (!file) throw new HttpException('No file provided', 400);
+  if (!file || !file.buffer?.length) {
+    throw new HttpException('No valid file provided', 400);
+  }
+
+  if (file.mimetype && !file.mimetype.startsWith('image/')) {
+    throw new HttpException('Only image files are allowed', 400);
+  }
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: 'healthcare_app',
-        resource_type: 'auto',
+        resource_type: 'image',
         transformation: {
           width: 500,
           height: 500,
@@ -45,6 +52,7 @@ const uploadToCloudinary = async (
         });
       },
     );
+
     streamifier.createReadStream(file.buffer).pipe(uploadStream);
   });
 };
