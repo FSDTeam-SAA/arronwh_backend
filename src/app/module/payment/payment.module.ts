@@ -8,9 +8,11 @@ import {
 } from '../subscribe/entities/subscribe.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from './entities/payment.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: Subscribe.name, schema: SubscribeSchema },
       { name: User.name, schema: UserSchema },

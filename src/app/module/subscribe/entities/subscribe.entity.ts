@@ -12,9 +12,9 @@ export class Subscribe {
   price: number;
 
   @Prop()
-  features: [string];
+  features: string[];
 
-  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'User' })
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'User', default: [] })
   user: Types.ObjectId[];
 }
 
