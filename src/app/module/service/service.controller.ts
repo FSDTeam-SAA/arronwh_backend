@@ -6,7 +6,6 @@ import {
   Put,
   Delete,
   Param,
-  Query,
   Body,
   UseInterceptors,
   UploadedFiles,
@@ -24,6 +23,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { fileUpload } from 'src/app/helpers/fileUploder';
@@ -51,6 +51,7 @@ export class ServiceController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new service' })
+  @ApiResponse({ status: 201, description: 'Service created successfully' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -133,6 +134,7 @@ export class ServiceController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all services' })
+  @ApiResponse({ status: 200, description: 'Services retrieved successfully' })
   @ApiQuery({ name: 'searchTerm', required: false, type: String, example: '' })
   @ApiQuery({ name: 'title', required: false, type: String, example: '' })
   @ApiQuery({ name: 'description', required: false, type: String, example: '' })
@@ -180,6 +182,7 @@ export class ServiceController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get service by ID' })
+  @ApiResponse({ status: 200, description: 'Service retrieved successfully' })
   @ApiParam({ name: 'id', type: String, example: '67f1234567890abcdef1234' })
   async getServiceById(@Param('id') id: string) {
     const result = await this.serviceService.getServiceById(id);
@@ -195,6 +198,7 @@ export class ServiceController {
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update service by ID' })
+  @ApiResponse({ status: 200, description: 'Service updated successfully' })
   @ApiParam({ name: 'id', type: String, example: '67f1234567890abcdef1234' })
   @ApiBody({
     schema: {
@@ -253,6 +257,7 @@ export class ServiceController {
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete service by ID' })
+  @ApiResponse({ status: 200, description: 'Service deleted successfully' })
   @ApiParam({ name: 'id', type: String, example: '67f1234567890abcdef1234' })
   async deleteServiceById(@Param('id') id: string) {
     const result = await this.serviceService.deleteServiceById(id);
