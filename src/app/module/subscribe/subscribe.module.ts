@@ -4,9 +4,11 @@ import { SubscribeController } from './subscribe.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Subscribe, SubscribeSchema } from './entities/subscribe.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     MongooseModule.forFeature([
       { name: Subscribe.name, schema: SubscribeSchema },
       { name: User.name, schema: UserSchema },
