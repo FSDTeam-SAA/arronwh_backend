@@ -22,6 +22,8 @@ import {
 } from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import pick from 'src/app/helpers/pick';
+import { CreateFaqDto } from './dto/create-faq.dto';
+import { UpdateFaqDto } from './dto/update-faq.dto';
 
 @ApiTags('faq')
 @Controller('faq')
@@ -41,7 +43,7 @@ export class FaqController {
     },
   })
   @HttpCode(HttpStatus.CREATED)
-  async createFaq(@Body() body: { question: string; answer: string }) {
+ async createFaq(@Body() body: CreateFaqDto) {
     const result = await this.faqService.createFaq(body);
     return {
       message: 'FAQ created successfully',
@@ -92,10 +94,7 @@ export class FaqController {
     },
   })
   @HttpCode(HttpStatus.OK)
-  async updateFaq(
-    @Param('id') id: string,
-    @Body() body: { question?: string; answer?: string },
-  ) {
+ async updateFaq(@Param('id') id: string, @Body() body: UpdateFaqDto) {
     const result = await this.faqService.updateFaq(id, body);
     return {
       message: 'FAQ updated successfully',
