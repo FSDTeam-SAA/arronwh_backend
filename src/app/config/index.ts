@@ -37,6 +37,12 @@ export default {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+    webhookBaseUrl: process.env.TWILIO_WEBHOOK_BASE_URL,
+  },
   devla: {
     baseUrl:
       process.env.DVLA_BASE_URL ||
