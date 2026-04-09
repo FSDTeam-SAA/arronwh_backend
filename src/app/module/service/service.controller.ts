@@ -28,17 +28,15 @@ import {
 import type { Request } from 'express';
 import { fileUpload } from 'src/app/helpers/fileUploder';
 import AuthGuard from 'src/app/middlewares/auth.guard';
-import { CreateServiceDto } from './dto/create-service.dto';
-import { UpdateServiceDto } from './dto/update-service.dto';
 import pick from 'src/app/helpers/pick';
 
 export type UploadedServiceFiles = {
-  images?: Express.Multer.File[];
-  productLogo?: Express.Multer.File[];
-  authorLogo?: Express.Multer.File[];
+  heroGallery?: Express.Multer.File[];
+  brandLogo?: Express.Multer.File[];
+  partnerLogo?: Express.Multer.File[];
   featureImage?: Express.Multer.File[];
-  includeImages?: Express.Multer.File[];
-  installationGuideImage?: Express.Multer.File[];
+  includedSectionImages?: Express.Multer.File[];
+  installationStepImages?: Express.Multer.File[];
 };
 
 @ApiTags('Service')
@@ -58,45 +56,119 @@ export class ServiceController {
       required: ['data'],
       properties: {
         data: {
-          type: 'string',
-          example: JSON.stringify(
-            {
-              title: 'Premium Web Development Service',
-              description:
-                'We provide high-quality full-stack web development solutions.',
-              badges: ['Popular', 'Best Seller'],
-              price: 300,
-              discount: 30,
-              features: [
+          type: 'object',
+          example: {
+            name: 'Worcester Bosch Greenstar 4000 25kw',
+            brand: 'Worcester Bosch',
+            category: 'boiler',
+            serviceType: 'combi boiler installation',
+            isActive: true,
+            isFeatured: false,
+            status: 'published',
+            heroSection: {
+              eyebrow: 'Your boiler',
+              title: 'Worcester Bosch Greenstar 4000 25kw',
+              subtitle: 'Combi Gas Boiler',
+              gallery: [
+                { alt: 'Front view', isPrimary: true, sortOrder: 0 },
+                { alt: 'Side view', isPrimary: false, sortOrder: 1 },
+              ],
+              badges: [{ label: 'Save £270', type: 'sale', color: 'green' }],
+              priceSummary: {
+                fullPrice: 3369,
+                discountedPrice: 3099,
+                discountAmount: 270,
+                discountPercentage: 8,
+                currency: 'GBP',
+                vatLabel: 'Inc VAT',
+                note: 'Fixed price including installation',
+              },
+              financePlan: {
+                enabled: true,
+                monthlyPrice: 40.07,
+                durationMonths: 120,
+                apr: 9.9,
+                deposit: 0,
+                representativeExample: '£40.07/month over 120 months at 9.9% APR',
+              },
+              cta: {
+                primaryText: 'Choose',
+                primaryAction: 'choose_service',
+                secondaryText: 'Save quote',
+                secondaryAction: 'save_quote',
+              },
+              paymentMethodIcons: ['visa', 'mastercard', 'amex'],
+            },
+            featureHighlightSection: {
+              title: 'Purpose built for small-medium sized homes',
+              description: 'Modern design and high efficiency.',
+              specifications: [
+                { label: 'Warranty', value: '10 years', icon: 'shield', sortOrder: 1 },
+                { label: 'Efficiency', value: '94%', icon: 'star', sortOrder: 2 },
+                { label: 'Output', value: '25kW', icon: 'bolt', sortOrder: 3 },
+              ],
+            },
+            includedSection: {
+              title: "What's included",
+              description: 'Everything needed to get your system running.',
+              items: [
                 {
-                  title: 'Fast Performance',
-                  details: 'Optimized for speed and efficiency',
+                  title: 'Carbon Monoxide Alarm',
+                  shortDescription: 'Included with installation',
+                  fullDescription: 'A carbon monoxide alarm is fitted as part of every installation for your safety.',
+                  isExpandable: true,
+                  isIncluded: true,
+                  sortOrder: 1,
+                },
+                {
+                  title: 'Flue Kit',
+                  shortDescription: 'Standard horizontal flue',
+                  fullDescription: 'Standard horizontal flue kit included, suitable for most properties.',
+                  isExpandable: true,
+                  isIncluded: true,
+                  sortOrder: 2,
                 },
               ],
-              featureSectionInformation: {
-                title: 'Why Choose Our Service',
-                description: 'We build modern and scalable solutions.',
-              },
-              includes: ['Source Code', 'Documentation', '1 Month Support'],
-              installationGuide:
-                'Step 1: Install dependencies. Step 2: Run the project.',
             },
-            null,
-            2,
-          ),
+            installationGuideSection: {
+              title: 'A step by step guide to your installation',
+              description: 'Our Gas Safe engineers will complete your installation on the agreed date.',
+              steps: [
+                { stepNumber: 1, title: 'Survey and preparation', description: 'Initial setup and preparation of the installation area.' },
+                { stepNumber: 2, title: 'Old boiler removal', description: 'Safe removal and disposal of the old boiler.' },
+                { stepNumber: 3, title: 'New boiler installation', description: 'Installation and commissioning of the new boiler.' },
+              ],
+            },
+            stickySummaryBar: {
+              enabled: true,
+              title: 'Worcester Bosch Greenstar 4000 25kw',
+              discountedPrice: 3099,
+              monthlyPrice: 40.07,
+              saveQuoteText: 'Save quote',
+              chooseText: 'Choose',
+            },
+            seo: {
+              metaTitle: 'Worcester Bosch Greenstar 4000 25kw | Boiler Installation',
+              metaDescription: 'Professional boiler installation package with 10-year warranty.',
+              keywords: ['boiler', 'installation', 'worcester bosch', 'combi boiler'],
+            },
+          },
         },
-        images: {
+        heroGallery: {
           type: 'array',
           items: { type: 'string', format: 'binary' },
         },
-        productLogo: { type: 'string', format: 'binary' },
-        authorLogo: { type: 'string', format: 'binary' },
+        brandLogo: { type: 'string', format: 'binary' },
+        partnerLogo: { type: 'string', format: 'binary' },
         featureImage: { type: 'string', format: 'binary' },
-        includeImages: {
+        includedSectionImages: {
           type: 'array',
           items: { type: 'string', format: 'binary' },
         },
-        installationGuideImage: { type: 'string', format: 'binary' },
+        installationStepImages: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
       },
     },
   })
@@ -104,12 +176,12 @@ export class ServiceController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'images', maxCount: 10 },
-        { name: 'productLogo', maxCount: 1 },
-        { name: 'authorLogo', maxCount: 1 },
+        { name: 'heroGallery', maxCount: 20 },
+        { name: 'brandLogo', maxCount: 1 },
+        { name: 'partnerLogo', maxCount: 1 },
         { name: 'featureImage', maxCount: 1 },
-        { name: 'includeImages', maxCount: 10 },
-        { name: 'installationGuideImage', maxCount: 1 },
+        { name: 'includedSectionImages', maxCount: 20 },
+        { name: 'installationStepImages', maxCount: 50 },
       ],
       fileUpload.uploadConfig,
     ),
@@ -136,15 +208,15 @@ export class ServiceController {
   @ApiOperation({ summary: 'Get all services' })
   @ApiResponse({ status: 200, description: 'Services retrieved successfully' })
   @ApiQuery({ name: 'searchTerm', required: false, type: String, example: '' })
-  @ApiQuery({ name: 'title', required: false, type: String, example: '' })
-  @ApiQuery({ name: 'description', required: false, type: String, example: '' })
-  @ApiQuery({ name: 'features', required: false, type: String, example: '' })
-  @ApiQuery({ name: 'includes', required: false, type: String, example: '' })
+  @ApiQuery({ name: 'name', required: false, type: String, example: '' })
+  @ApiQuery({ name: 'brand', required: false, type: String, example: '' })
+  @ApiQuery({ name: 'category', required: false, type: String, example: '' })
+  @ApiQuery({ name: 'serviceType', required: false, type: String, example: '' })
   @ApiQuery({
-    name: 'installationGuide',
+    name: 'status',
     required: false,
     type: String,
-    example: '',
+    example: 'published',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
@@ -163,13 +235,15 @@ export class ServiceController {
   async getAllServices(@Req() req: Request) {
     const filters = pick(req.query, [
       'searchTerm',
-      'title',
-      'description',
-      'features',
-      'includes',
-      'installationGuide',
+      'name',
+      'brand',
+      'category',
+      'serviceType',
+      'status',
     ]);
+
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
     const result = await this.serviceService.getAllServices(filters, options);
 
     return {
@@ -197,6 +271,7 @@ export class ServiceController {
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Update service by ID' })
   @ApiResponse({ status: 200, description: 'Service updated successfully' })
   @ApiParam({ name: 'id', type: String, example: '67f1234567890abcdef1234' })
@@ -204,47 +279,53 @@ export class ServiceController {
     schema: {
       type: 'object',
       properties: {
-        title: { type: 'string' },
-        description: { type: 'string' },
-        badges: { type: 'array', items: { type: 'string' } },
-        price: { type: 'number' },
-        discount: { type: 'number' },
-        features: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              title: { type: 'string' },
-              details: { type: 'string' },
+        data: {
+          type: 'object',
+          example: {
+            name: 'Updated Service Name',
+            brand: 'Updated Brand',
+            heroSection: {
+              title: 'Updated hero title',
             },
           },
         },
-        featureSectionInformation: {
-          type: 'object',
-          properties: {
-            title: { type: 'string' },
-            description: { type: 'string' },
-            productLogo: { type: 'string' },
-            authorLogo: { type: 'string' },
-            featureImage: { type: 'string' },
-          },
+        heroGallery: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
         },
-        includes: { type: 'array', items: { type: 'string' } },
-        includeImage: { type: 'array', items: { type: 'string' } },
-        installationGuide: { type: 'string' },
-        installationGuideImage: { type: 'string' },
+        brandLogo: { type: 'string', format: 'binary' },
+        partnerLogo: { type: 'string', format: 'binary' },
+        featureImage: { type: 'string', format: 'binary' },
+        includedSectionImages: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+        installationStepImages: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
       },
     },
   })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'heroGallery', maxCount: 20 },
+        { name: 'brandLogo', maxCount: 1 },
+        { name: 'partnerLogo', maxCount: 1 },
+        { name: 'featureImage', maxCount: 1 },
+        { name: 'includedSectionImages', maxCount: 20 },
+        { name: 'installationStepImages', maxCount: 50 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   async updateServiceById(
     @Param('id') id: string,
-    @Body() updateServiceDto: UpdateServiceDto,
+    @Body('data') data: string,
+    @UploadedFiles() files: UploadedServiceFiles,
   ) {
-    const result = await this.serviceService.updateServiceById(
-      id,
-      updateServiceDto,
-      {},
-    );
+    const result = await this.serviceService.updateServiceById(id, data, files);
 
     return {
       message: 'Service updated successfully',
