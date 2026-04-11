@@ -12,15 +12,8 @@ import { FaqModule } from './app/module/faq/faq.module';
 import { ServiceModule } from './app/module/service/service.module';
 import { AuthModule } from './app/module/auth/auth.module';
 import { QuoteModule } from './app/module/quote/quote.module';
-
-// const databaseImports = config.isMongoEnabled
-//   ? [
-//       MongooseModule.forRoot(config.mongoUri as string,),
-//       UserModule,
-//       AuthModule,
-//       ContactModule,
-//     ]
-//   : [];
+import { BookingModule } from './app/module/booking/booking.module';
+import { ProductModule } from './app/module/product/product.module';
 
 @Module({
   imports: [
@@ -34,6 +27,8 @@ import { QuoteModule } from './app/module/quote/quote.module';
     FaqModule,
     ServiceModule,
     QuoteModule,
+    BookingModule,
+    ProductModule,
   ],
 
   controllers: [AppController],
