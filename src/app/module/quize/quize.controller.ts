@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { QuizeService } from './quize.service';
 import { CreateQuizeDto } from './dto/create-quize.dto';
 import { UpdateQuizeDto } from './dto/update-quize.dto';

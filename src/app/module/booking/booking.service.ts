@@ -28,7 +28,9 @@ export class BookingService {
     }
 
     if (createBookingDto.service) {
-      const service = await this.serviceModel.findById(createBookingDto.service);
+      const service = await this.serviceModel.findById(
+        createBookingDto.service,
+      );
       if (!service) {
         throw new HttpException('Service not found', 404);
       }
@@ -100,7 +102,9 @@ export class BookingService {
     }
 
     if (updateBookingDto.service) {
-      const service = await this.serviceModel.findById(updateBookingDto.service);
+      const service = await this.serviceModel.findById(
+        updateBookingDto.service,
+      );
       if (!service) {
         throw new HttpException('Service not found', 404);
       }

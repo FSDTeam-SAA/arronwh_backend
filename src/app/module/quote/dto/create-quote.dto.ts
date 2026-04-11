@@ -44,7 +44,7 @@ export class PayMonthlyDataDto {
 
   @IsNumber()
   @IsPositive({ message: 'Month number must be at least 1' })
-  mounthNumber: number;        
+  mounthNumber: number;
 
   @IsNumber()
   @IsPositive()
@@ -95,7 +95,9 @@ export class CreateQuoteDto {
   payMounthly?: boolean;
 
   @ValidateIf((obj: CreateQuoteDto) => obj.payMounthly === true)
-  @IsNotEmpty({ message: 'payMounthlyData is required when payMounthly is true' })
+  @IsNotEmpty({
+    message: 'payMounthlyData is required when payMounthly is true',
+  })
   @ValidateNested()
   @Type(() => PayMonthlyDataDto)
   payMounthlyData?: PayMonthlyDataDto;

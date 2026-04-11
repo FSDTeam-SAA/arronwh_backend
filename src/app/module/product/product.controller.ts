@@ -1,11 +1,28 @@
 import {
-  Controller, Post, Get, Put, Delete, Param, Body,
-  UseInterceptors, UploadedFiles, Req, HttpCode, HttpStatus, UseGuards,
+  Controller,
+  Post,
+  Get,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseInterceptors,
+  UploadedFiles,
+  Req,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
-  ApiTags, ApiConsumes, ApiBearerAuth, ApiBody,
-  ApiOperation, ApiParam, ApiQuery, ApiResponse,
+  ApiTags,
+  ApiConsumes,
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { ProductService } from './product.service';
@@ -33,26 +50,48 @@ export class ProductController {
       properties: {
         data: {
           type: 'string',
-          example: JSON.stringify({
-            title: 'Boiler Pro 25kw',
-            description: 'High-efficiency boiler system.',
-            shortDescription: 'Best boiler for homes.',
-            badges: ['Popular'],
-            price: 1200,
-            discountPrice: 1000,
-            payablePrice: 950,
-            monthlyPrice: 80,
-            boilerAbility: '40 to 25kw',
-            boilerFeatures: [{ warranty: '5 years', title: 'Energy Efficient', details: 'A+ rated' }],
-            featureInformation: { featureTitle: 'Why Choose Us', featureDescription: 'Industry leading quality.' },
-            boilerIncludedData: 'Includes all fittings and parts.',
-            boilerInstallationGuide: [{ title: 'Step 1: Mount the unit' }],
-          }, null, 2),
+          example: JSON.stringify(
+            {
+              title: 'Boiler Pro 25kw',
+              description: 'High-efficiency boiler system.',
+              shortDescription: 'Best boiler for homes.',
+              badges: ['Popular'],
+              price: 1200,
+              discountPrice: 1000,
+              payablePrice: 950,
+              monthlyPrice: 80,
+              boilerAbility: '40 to 25kw',
+              boilerFeatures: [
+                {
+                  warranty: '5 years',
+                  title: 'Energy Efficient',
+                  details: 'A+ rated',
+                },
+              ],
+              featureInformation: {
+                featureTitle: 'Why Choose Us',
+                featureDescription: 'Industry leading quality.',
+              },
+              boilerIncludedData: 'Includes all fittings and parts.',
+              boilerInstallationGuide: [{ title: 'Step 1: Mount the unit' }],
+            },
+            null,
+            2,
+          ),
         },
         images: { type: 'array', items: { type: 'string', format: 'binary' } },
-        includedImages: { type: 'array', items: { type: 'string', format: 'binary' } },
-        featureLogo: { type: 'array', items: { type: 'string', format: 'binary' } },
-        installationGuideImages: { type: 'array', items: { type: 'string', format: 'binary' } },
+        includedImages: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+        featureLogo: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+        installationGuideImages: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
       },
     },
   })
@@ -73,7 +112,11 @@ export class ProductController {
     @Body('data') data: string,
     @UploadedFiles() files: UploadedProductFiles,
   ) {
-    const result = await this.productService.createProduct(req.user!.id, data, files);
+    const result = await this.productService.createProduct(
+      req.user!.id,
+      data,
+      files,
+    );
     return { message: 'Product created successfully', data: result };
   }
 
@@ -87,13 +130,34 @@ export class ProductController {
   @ApiQuery({ name: 'boilerAbility', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, example: 'createdAt' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], example: 'desc' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   async getAllProducts(@Req() req: Request) {
-    const filters = pick(req.query, ['searchTerm', 'title', 'description', 'shortDescription', 'boilerAbility', 'boilerIncludedData']);
+    const filters = pick(req.query, [
+      'searchTerm',
+      'title',
+      'description',
+      'shortDescription',
+      'boilerAbility',
+      'boilerIncludedData',
+    ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
     const result = await this.productService.getAllProducts(filters, options);
-    return { message: 'Products retrieved successfully', meta: result.meta, data: result.data };
+    return {
+      message: 'Products retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
   }
 
   @Get(':id')
@@ -111,7 +175,10 @@ export class ProductController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update product by ID' })
   @ApiParam({ name: 'id', type: String })
-  async updateProductById(@Param('id') id: string, @Body() dto: UpdateProductDto) {
+  async updateProductById(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+  ) {
     const result = await this.productService.updateProductById(id, dto);
     return { message: 'Product updated successfully', data: result };
   }
