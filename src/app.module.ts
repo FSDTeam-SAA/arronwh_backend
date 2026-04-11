@@ -35,8 +35,7 @@ import { ProductModule } from './app/module/product/product.module';
     ExtraModule,
     FaqModule,
     ServiceModule,
-    TwilioModule,
-    ProductModule,
+    QuoteModule,
   ],
 
   controllers: [AppController],
