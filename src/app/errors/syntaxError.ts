@@ -1,5 +1,4 @@
-import { TErrorSource } from "../middlewares/globalErrors.filter";
-
+import { TErrorSource } from '../middlewares/globalErrors.filter';
 
 export function handleSyntaxError(err: SyntaxError): {
   statusCode: number;

@@ -89,7 +89,8 @@ export class ServiceController {
                 durationMonths: 120,
                 apr: 9.9,
                 deposit: 0,
-                representativeExample: '£40.07/month over 120 months at 9.9% APR',
+                representativeExample:
+                  '£40.07/month over 120 months at 9.9% APR',
               },
               cta: {
                 primaryText: 'Choose',
@@ -103,8 +104,18 @@ export class ServiceController {
               title: 'Purpose built for small-medium sized homes',
               description: 'Modern design and high efficiency.',
               specifications: [
-                { label: 'Warranty', value: '10 years', icon: 'shield', sortOrder: 1 },
-                { label: 'Efficiency', value: '94%', icon: 'star', sortOrder: 2 },
+                {
+                  label: 'Warranty',
+                  value: '10 years',
+                  icon: 'shield',
+                  sortOrder: 1,
+                },
+                {
+                  label: 'Efficiency',
+                  value: '94%',
+                  icon: 'star',
+                  sortOrder: 2,
+                },
                 { label: 'Output', value: '25kW', icon: 'bolt', sortOrder: 3 },
               ],
             },
@@ -115,7 +126,8 @@ export class ServiceController {
                 {
                   title: 'Carbon Monoxide Alarm',
                   shortDescription: 'Included with installation',
-                  fullDescription: 'A carbon monoxide alarm is fitted as part of every installation for your safety.',
+                  fullDescription:
+                    'A carbon monoxide alarm is fitted as part of every installation for your safety.',
                   isExpandable: true,
                   isIncluded: true,
                   sortOrder: 1,
@@ -123,7 +135,8 @@ export class ServiceController {
                 {
                   title: 'Flue Kit',
                   shortDescription: 'Standard horizontal flue',
-                  fullDescription: 'Standard horizontal flue kit included, suitable for most properties.',
+                  fullDescription:
+                    'Standard horizontal flue kit included, suitable for most properties.',
                   isExpandable: true,
                   isIncluded: true,
                   sortOrder: 2,
@@ -132,11 +145,26 @@ export class ServiceController {
             },
             installationGuideSection: {
               title: 'A step by step guide to your installation',
-              description: 'Our Gas Safe engineers will complete your installation on the agreed date.',
+              description:
+                'Our Gas Safe engineers will complete your installation on the agreed date.',
               steps: [
-                { stepNumber: 1, title: 'Survey and preparation', description: 'Initial setup and preparation of the installation area.' },
-                { stepNumber: 2, title: 'Old boiler removal', description: 'Safe removal and disposal of the old boiler.' },
-                { stepNumber: 3, title: 'New boiler installation', description: 'Installation and commissioning of the new boiler.' },
+                {
+                  stepNumber: 1,
+                  title: 'Survey and preparation',
+                  description:
+                    'Initial setup and preparation of the installation area.',
+                },
+                {
+                  stepNumber: 2,
+                  title: 'Old boiler removal',
+                  description: 'Safe removal and disposal of the old boiler.',
+                },
+                {
+                  stepNumber: 3,
+                  title: 'New boiler installation',
+                  description:
+                    'Installation and commissioning of the new boiler.',
+                },
               ],
             },
             stickySummaryBar: {
@@ -148,9 +176,16 @@ export class ServiceController {
               chooseText: 'Choose',
             },
             seo: {
-              metaTitle: 'Worcester Bosch Greenstar 4000 25kw | Boiler Installation',
-              metaDescription: 'Professional boiler installation package with 10-year warranty.',
-              keywords: ['boiler', 'installation', 'worcester bosch', 'combi boiler'],
+              metaTitle:
+                'Worcester Bosch Greenstar 4000 25kw | Boiler Installation',
+              metaDescription:
+                'Professional boiler installation package with 10-year warranty.',
+              keywords: [
+                'boiler',
+                'installation',
+                'worcester bosch',
+                'combi boiler',
+              ],
             },
           },
         },

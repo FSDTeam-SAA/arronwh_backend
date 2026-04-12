@@ -20,7 +20,8 @@ export type UploadedProductFiles = {
 @Injectable()
 export class ProductService {
   constructor(
-    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
@@ -36,14 +37,19 @@ export class ProductService {
   private normalizeStringArray(value: unknown): string[] {
     if (!value) return [];
     if (Array.isArray(value)) return value.map(String).filter(Boolean);
-    if (typeof value === 'string') return value.split(',').map((s) => s.trim()).filter(Boolean);
+    if (typeof value === 'string')
+      return value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
     return [String(value)].filter(Boolean);
   }
 
   private normalizeNumber(value: unknown): number | undefined {
     if (value === undefined || value === null || value === '') return undefined;
     const n = Number(value);
-    if (Number.isNaN(n)) throw new HttpException('Invalid number provided', 400);
+    if (Number.isNaN(n))
+      throw new HttpException('Invalid number provided', 400);
     return n;
   }
 
@@ -63,14 +69,23 @@ export class ProductService {
   private async uploadMany(files?: Express.Multer.File[]): Promise<string[]> {
     const valid = this.getValidFiles(files);
     if (!valid.length) return [];
-    return Promise.all(valid.map((f) => fileUpload.uploadToCloudinary(f).then((r) => r.url)));
+    return Promise.all(
+      valid.map((f) => fileUpload.uploadToCloudinary(f).then((r) => r.url)),
+    );
   }
 
-  async createProduct(userId: string, data: string, files: UploadedProductFiles) {
+  async createProduct(
+    userId: string,
+    data: string,
+    files: UploadedProductFiles,
+  ) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new HttpException('User not found', 404);
 
-    const payload = this.parseJson<CreateProductDto>(data, {} as CreateProductDto);
+    const payload = this.parseJson<CreateProductDto>(
+      data,
+      {} as CreateProductDto,
+    );
 
     const [images, includedImages, featureLogo] = await Promise.all([
       this.uploadMany(files.images),
@@ -108,7 +123,8 @@ export class ProductService {
         : [],
       featureInformation: {
         featureTitle: payload.featureInformation?.featureTitle?.trim(),
-        featureDescription: payload.featureInformation?.featureDescription?.trim(),
+        featureDescription:
+          payload.featureInformation?.featureDescription?.trim(),
         featureLogo,
       },
       boilerIncludedData: payload.boilerIncludedData?.trim(),
@@ -120,7 +136,11 @@ export class ProductService {
   async getAllProducts(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
     const whereConditions = buildWhereConditions(params, [
-      'title', 'description', 'shortDescription', 'boilerAbility', 'boilerIncludedData',
+      'title',
+      'description',
+      'shortDescription',
+      'boilerAbility',
+      'boilerIncludedData',
     ]);
     const [total, data] = await Promise.all([
       this.productModel.countDocuments(whereConditions),
@@ -135,7 +155,9 @@ export class ProductService {
   }
 
   async getProductById(id: string) {
-    const product = await this.productModel.findById(id).populate('user', 'fullName email');
+    const product = await this.productModel
+      .findById(id)
+      .populate('user', 'fullName email');
     if (!product) throw new HttpException('Product not found', 404);
     return product;
   }
