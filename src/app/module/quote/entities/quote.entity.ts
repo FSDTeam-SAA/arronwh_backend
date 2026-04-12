@@ -3,31 +3,41 @@ import mongoose, { HydratedDocument, Types } from 'mongoose';
 
 export type QuoteDocument = HydratedDocument<Quote>;
 
+class QuoteQuizAnswer {
+  @Prop()
+  question: string;
+
+  @Prop()
+  answer: string;
+}
+
+class personalInfo {
+  @Prop()
+  title: string;
+
+  @Prop()
+  fastName: string;
+
+  @Prop()
+  sureName: string;
+
+  @Prop()
+  email: string;
+
+  @Prop()
+  mobleNumber: string;
+}
+
 @Schema({ timestamps: true })
 export class Quote {
-  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Quize' })
-  quizes: Types.ObjectId[];
-
-  @Prop({
-    type: {
-      title: { type: String },
-      fastName: { type: String },
-      sureName: { type: String },
-      email: { type: String },
-      mobleNumber: { type: String },
-    },
-    required: false,
-  })
-  personalInfo: {
-    title: string;
-    fastName: string;
-    sureName: string;
-    email: string;
-    mobleNumber: string;
-  };
-
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Service' })
-  serviceId: Types.ObjectId;
+  service?: Types.ObjectId;
+
+  @Prop({ type: [QuoteQuizAnswer], _id: false, default: [] })
+  quizAnswers: QuoteQuizAnswer[];
+
+  @Prop({ type: personalInfo })
+  personalInfo: personalInfo;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'BoilerController' })
   controller: Types.ObjectId;
@@ -36,7 +46,7 @@ export class Quote {
   extra: Types.ObjectId;
 
   @Prop()
-  surveyData: Date;
+  surveyDate: Date;
 
   @Prop()
   installDate: Date;

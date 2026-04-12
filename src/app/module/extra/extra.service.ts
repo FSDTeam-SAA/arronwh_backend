@@ -20,9 +20,7 @@ export class ExtraService {
       title: body.title,
       description: body.description,
       badges:
-        typeof body.badges === 'string'
-          ? [body.badges]
-          : body.badges ?? [],
+        typeof body.badges === 'string' ? [body.badges] : (body.badges ?? []),
       price: Number(body.price),
       discount: body.discount ? Number(body.discount) : 0,
       images: [],

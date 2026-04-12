@@ -52,7 +52,7 @@
 
 //       const call = await this.client.calls(callSid).fetch();
 //       if (!call) throw new HttpException('Call not found', 404);
-      
+
 //       return {
 //         sid: call.sid,
 //         to: call.to,

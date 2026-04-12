@@ -11,18 +11,9 @@ import { ExtraModule } from './app/module/extra/extra.module';
 import { FaqModule } from './app/module/faq/faq.module';
 import { ServiceModule } from './app/module/service/service.module';
 import { AuthModule } from './app/module/auth/auth.module';
-import { TwilioModule } from './app/module/twilio/twilio.module';
-import { Product } from './app/module/product/entitiy/product.entitiy';
+import { QuoteModule } from './app/module/quote/quote.module';
+import { BookingModule } from './app/module/booking/booking.module';
 import { ProductModule } from './app/module/product/product.module';
-
-// const databaseImports = config.isMongoEnabled
-//   ? [
-//       MongooseModule.forRoot(config.mongoUri as string,),
-//       UserModule,
-//       AuthModule,
-//       ContactModule,
-//     ]
-//   : [];
 
 @Module({
   imports: [
@@ -36,6 +27,8 @@ import { ProductModule } from './app/module/product/product.module';
     FaqModule,
     ServiceModule,
     QuoteModule,
+    BookingModule,
+    ProductModule,
   ],
 
   controllers: [AppController],
