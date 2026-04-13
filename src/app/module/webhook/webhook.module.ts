@@ -5,7 +5,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
 
-
 @Module({
   imports: [
     MongooseModule.forFeature([
