@@ -12,6 +12,7 @@ import { FaqModule } from './app/module/faq/faq.module';
 import { ServiceModule } from './app/module/service/service.module';
 import { AuthModule } from './app/module/auth/auth.module';
 import { QuoteModule } from './app/module/quote/quote.module';
+import { BookingModule } from './app/module/booking/booking.module';
 
 // const databaseImports = config.isMongoEnabled
 //   ? [
@@ -34,6 +35,7 @@ import { QuoteModule } from './app/module/quote/quote.module';
     FaqModule,
     ServiceModule,
     QuoteModule,
+    BookingModule,
   ],
 
   controllers: [AppController],
