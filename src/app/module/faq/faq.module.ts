@@ -5,9 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Faq, FaqSchema } from './entities/faq.entities';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Faq.name, schema: FaqSchema }]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: Faq.name, schema: FaqSchema }])],
   controllers: [FaqController],
   providers: [FaqService],
 })

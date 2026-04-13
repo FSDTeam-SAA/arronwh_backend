@@ -37,23 +37,11 @@ export default {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   },
-  devla: {
-    baseUrl:
-      process.env.DVLA_BASE_URL ||
-      'https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles',
-    freeDevialKey: process.env.DVLA_FREE_API_KEY || process.env.FREE_DEVIAL_KEY,
-    paidDevialKey: process.env.DVLA_PAID_API_KEY || process.env.PAID_DEVIAL_KEY,
-    defaultKeyType: process.env.DVLA_KEY_TYPE || 'free',
-  },
-  mot: {
-    clientId: process.env.MOT_CLIENT_ID,
-    clientSecret: process.env.MOT_CLIENT_SECRET,
-    apiKey: process.env.MOT_API_KEY,
-    scopeUrl: process.env.MOT_SCOPE_URL || 'https://tapi.dvsa.gov.uk/.default',
-    tokenUrl: process.env.MOT_TOKEN_URL,
-    apiBase:
-      process.env.MOT_API_BASE ||
-      'https://history.mot.api.gov.uk/v1/trade/vehicles',
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+    webhookBaseUrl: process.env.TWILIO_WEBHOOK_BASE_URL,
   },
   frontendUrl: process.env.FRONTEND_URL,
 };
