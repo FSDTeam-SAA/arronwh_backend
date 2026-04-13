@@ -1,3 +1,4 @@
+// payment/payment.controller.ts
 import {
   Controller,
   Post,
@@ -24,20 +25,11 @@ import pick from 'src/app/helpers/pick';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post(':subscribeId')
-  @ApiOperation({
-    summary: 'Create payment intent for car checker subscription',
-  })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('user'))
-  async payCarCheckerSubscribe(
-    @Req() req: Request,
-    @Param('subscribeId') subscribeId: string,
-  ) {
-    const result = await this.paymentService.payCarCheckerSubscribe(
-      req.user!.id,
-      subscribeId,
-    );
+  @Post(':bookingId')
+  @ApiOperation({ summary: 'Create payment intent for a booking' })
+  @HttpCode(HttpStatus.CREATED)
+  async payBooking(@Param('bookingId') bookingId: string) {
+    const result = await this.paymentService.payBooking(bookingId);
     return {
       message: 'Payment intent created successfully',
       data: result,
@@ -45,57 +37,25 @@ export class PaymentController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all payemnt' })
+  @ApiOperation({ summary: 'Get all payments' })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @ApiQuery({
-    name: 'searchTerm',
-    required: false,
-    type: String,
-    example: '',
-    description: 'Search by ',
-  })
-  @ApiQuery({
-    name: 'paymentType',
-    required: false,
-    type: String,
-    example: '',
-    description: 'Filter by paymentType value',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    type: String,
-    example: '',
-    description: 'Filter by status value',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    example: 1,
-    description: 'Page number. Default is 1',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    example: 10,
-    description: 'Items per page. Default is 10',
-  })
+  @ApiQuery({ name: 'searchTerm', required: false, type: String })
+  @ApiQuery({ name: 'paymentType', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
     example: 'createdAt',
-    description: 'Sort field. Default is createdAt',
   })
   @ApiQuery({
     name: 'sortOrder',
     required: false,
     enum: ['asc', 'desc'],
     example: 'desc',
-    description: 'Sort order. Default is desc',
   })
   @HttpCode(HttpStatus.OK)
   async getAllPayment(@Req() req: Request) {
@@ -110,12 +70,12 @@ export class PaymentController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get payment Id' })
+  @ApiOperation({ summary: 'Get payment by Id' })
   @HttpCode(HttpStatus.OK)
   async getSinglePayment(@Param('id') id: string) {
     const result = await this.paymentService.getSinglePayment(id);
     return {
-      message: 'payment retrieved successfully',
+      message: 'Payment retrieved successfully',
       data: result,
     };
   }

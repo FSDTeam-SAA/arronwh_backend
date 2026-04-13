@@ -18,15 +18,13 @@ export class BookingService {
   ) {}
 
   async createBooking(createBookingDto: CreateBookingDto) {
-    const { quote } = createBookingDto;
+    const { quote, price } = createBookingDto;
 
-    // Verify quote exists
     const quoteExists = await this.quoteModel.findById(quote);
     if (!quoteExists) {
       throw new BadRequestException(`Quote with id ${quote} not found.`);
     }
 
-    // Check if booking already exists for this quote
     const existingBooking = await this.bookingModel.findOne({ quote });
     if (existingBooking) {
       throw new BadRequestException(
@@ -34,7 +32,7 @@ export class BookingService {
       );
     }
 
-    const newBooking = new this.bookingModel({ quote });
+    const newBooking = new this.bookingModel({ quote, price });
     await newBooking.save();
     return newBooking;
   }

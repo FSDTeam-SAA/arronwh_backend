@@ -1,16 +1,14 @@
+// payment/payment.service.ts
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { Payment, PaymentDocument } from './entities/payment.entity';
-import { User, UserDocument } from '../user/entities/user.entity';
-import {
-  Subscribe,
-  SubscribeDocument,
-} from '../subscribe/entities/subscribe.entity';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
 
 @Injectable()
 export class PaymentService {
@@ -19,40 +17,42 @@ export class PaymentService {
   constructor(
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-    @InjectModel(Subscribe.name)
-    private readonly subscribeModel: Model<SubscribeDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
+    @InjectModel(Quote.name)
+    private readonly quoteModel: Model<QuoteDocument>,
   ) {
     this.stripe = new Stripe(config.stripe.secretKey!);
   }
 
-  async payCarCheckerSubscribe(userId: string, subscribeId: string) {
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new HttpException('User not found', 404);
+  async payBooking(bookingId: string) {
+    // 1. Find booking
+    const booking = await this.bookingModel.findById(bookingId);
+    if (!booking) {
+      throw new HttpException('Booking not found', 404);
     }
 
-    const plan = await this.subscribeModel.findById(subscribeId);
-    if (!plan) {
-      throw new HttpException('Subscription plan not found', 404);
+    // 2. Find quote from booking
+    const quote = await this.quoteModel.findById(booking.quote);
+    if (!quote) {
+      throw new HttpException('Quote not found', 404);
     }
 
+    // 3. Check if already paid
     const existingCompleted = await this.paymentModel.findOne({
-      user: user._id,
-      subscribe: plan._id,
+      bookingId: booking._id,
       status: 'completed',
-    } as never);
+    });
 
     if (existingCompleted) {
-      throw new HttpException('You already have this subscription', 400);
+      throw new HttpException('This booking is already paid', 400);
     }
 
+    // 4. Check if pending payment exists — reuse it
     const existingPending = await this.paymentModel.findOne({
-      user: user._id,
-      subscribe: plan._id,
+      bookingId: booking._id,
       status: 'pending',
-    } as never);
+    });
 
     if (existingPending?.stripePaymentIntentId) {
       const existingPaymentIntent = await this.stripe.paymentIntents.retrieve(
@@ -66,36 +66,39 @@ export class PaymentService {
         return {
           clientSecret: existingPaymentIntent.client_secret,
           paymentIntentId: existingPaymentIntent.id,
-          amount: plan.price,
+          amount: booking.price,
         };
       }
     }
 
+    // 5. Create new Stripe payment intent
     const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: Math.round(plan.price * 100),
-      currency: 'usd',
+      amount: Math.round(booking.price * 100),
+      currency: 'gbp',
       automatic_payment_methods: {
         enabled: true,
       },
       metadata: {
-        userId: user._id.toString(),
-        subscribeId: plan._id.toString(),
-        paymentType: 'subscription',
-        amount: String(plan.price),
+        bookingId: booking._id.toString(),
+        quoteId: quote._id.toString(),
+        paymentType: 'booking',
+        amount: String(booking.price),
       },
     });
 
+    // 6. Save or update payment record
     if (existingPending) {
       existingPending.stripePaymentIntentId = paymentIntent.id;
-      existingPending.amount = plan.price;
+      existingPending.amount = booking.price;
       await existingPending.save();
     } else {
       await this.paymentModel.create({
-        user: user._id,
-        subscribe: plan._id,
+        bookingId: booking._id,
+        name: quote.personalInfo.fastName + ' ' + quote.personalInfo.sureName,
+        email: quote.personalInfo.email,
         stripePaymentIntentId: paymentIntent.id,
-        amount: plan.price,
-        paymentType: 'subscription',
+        amount: booking.price,
+        paymentType: 'booking',
         status: 'pending',
       });
     }
@@ -103,7 +106,7 @@ export class PaymentService {
     return {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: plan.price,
+      amount: booking.price,
     };
   }
 
@@ -117,6 +120,8 @@ export class PaymentService {
       whereConditions.$or = [
         { paymentType: { $regex: searchTerm, $options: 'i' } },
         { status: { $regex: searchTerm, $options: 'i' } },
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { email: { $regex: searchTerm, $options: 'i' } },
       ];
     }
 
@@ -134,24 +139,28 @@ export class PaymentService {
       .skip(skip)
       .limit(limit)
       .sort({ [sortBy]: sortOrder } as never)
-      .populate('user')
-      .populate('subscribe');
+      .populate({
+        path: 'bookingId',
+        populate: {
+          path: 'quote',
+          populate: ['productId', 'controller', 'extra'],
+        },
+      });
 
     return {
-      meta: {
-        page,
-        limit,
-        total,
-      },
+      meta: { page, limit, total },
       data,
     };
   }
 
   async getSinglePayment(id: string) {
-    const payment = await this.paymentModel
-      .findById(id)
-      .populate('user')
-      .populate('subscribe');
+    const payment = await this.paymentModel.findById(id).populate({
+      path: 'bookingId',
+      populate: {
+        path: 'quote',
+        populate: ['productId', 'controller', 'extra'],
+      },
+    });
 
     if (!payment) {
       throw new HttpException('Payment not found', 404);

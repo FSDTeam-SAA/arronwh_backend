@@ -1,9 +1,11 @@
+// webhook/webhook.service.ts
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import type { Response } from 'express';
 
 @Injectable()
@@ -14,6 +16,8 @@ export class WebhookService {
   constructor(
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
 
   async handleWebhook(rawBody: Buffer, sig: string, res: Response) {
@@ -55,7 +59,6 @@ export class WebhookService {
     return res.json({ received: true });
   }
 
-  // ── payment_intent.succeeded ───────────────────────────────────────────────
   private async handlePaymentIntentSucceeded(event: Stripe.Event) {
     const intent = event.data.object as Stripe.PaymentIntent;
 
@@ -64,20 +67,30 @@ export class WebhookService {
     });
     if (!payment) return;
 
+    // Update payment status
     payment.status = 'completed';
     await payment.save();
+
+    // Update booking status to confirmed
+    await this.bookingModel.findByIdAndUpdate(payment.bookingId, {
+      status: 'confirmed',
+    });
   }
 
-  // ── payment_intent.payment_failed ──────────────────────────────────────────
   private async handlePaymentIntentFailed(event: Stripe.Event) {
     const intent = event.data.object as Stripe.PaymentIntent;
 
     const payment = await this.paymentModel.findOne({
       stripePaymentIntentId: intent.id,
     });
-    if (payment) {
-      payment.status = 'failed';
-      await payment.save();
-    }
+    if (!payment) return;
+
+    payment.status = 'failed';
+    await payment.save();
+
+    // Update booking status to cancelled
+    await this.bookingModel.findByIdAndUpdate(payment.bookingId, {
+      status: 'cancelled',
+    });
   }
 }

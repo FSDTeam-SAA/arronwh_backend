@@ -9,7 +9,6 @@ import { WebhookModule } from './app/module/webhook/webhook.module';
 import { ControllerModule } from './app/module/controller/controller.module';
 import { ExtraModule } from './app/module/extra/extra.module';
 import { FaqModule } from './app/module/faq/faq.module';
-import { ServiceModule } from './app/module/service/service.module';
 import { AuthModule } from './app/module/auth/auth.module';
 import { QuoteModule } from './app/module/quote/quote.module';
 import { BookingModule } from './app/module/booking/booking.module';
@@ -26,7 +25,6 @@ import { UserModule } from './app/module/user/user.module';
     ControllerModule,
     ExtraModule,
     FaqModule,
-    ServiceModule,
     QuoteModule,
     BookingModule,
     ProductModule,

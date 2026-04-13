@@ -1,15 +1,16 @@
+// webhook/webhook.module.ts
 import { Module } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { WebhookController } from './webhook.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from '../user/entities/user.entity';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
+import { Booking, BookingSchema } from '../booking/entities/booking.entity';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
       { name: Payment.name, schema: PaymentSchema },
+      { name: Booking.name, schema: BookingSchema },
     ]),
   ],
   controllers: [WebhookController],
