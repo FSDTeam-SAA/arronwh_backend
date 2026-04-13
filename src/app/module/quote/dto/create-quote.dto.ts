@@ -1,134 +1,111 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsArray,
+  IsString,
+  IsOptional,
   IsBoolean,
   IsDateString,
-  IsEmail,
-  IsMongoId,
-  IsNotEmpty,
+  IsArray,
   IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  ValidateIf,
   ValidateNested,
-  Min,
+  IsNotEmpty,
+  IsEmail,
 } from 'class-validator';
-
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class PersonalInfoDto {
-  @ApiPropertyOptional({ example: 'Mr' })
+class PersonalInfoDto {
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   title?: string;
 
-  @ApiProperty({ example: 'John' })
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   firstName: string;
 
-  @ApiProperty({ example: 'Doe' })
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
-  lastName: string;
+  surName: string;
 
-  @ApiProperty({ example: 'john@example.com' })
+  @ApiProperty()
   @IsNotEmpty()
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '+8801XXXXXXXXX' })
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   mobileNumber: string;
 }
 
-export class QuoteQuizAnswerDto {
-  @ApiProperty({ example: 'What is your requirement?' })
-  @IsString()
-  question: string;
-
-  @ApiProperty({ example: 'Need boiler installation' })
-  @IsString()
-  answer: string;
-}
-
-export class PayMonthlyDataDto {
-  @ApiProperty({ example: 100 })
+class PayMonthlyDataDto {
+  @ApiProperty()
   @IsNumber()
-  @Min(0)
   deposit: number;
 
-  @ApiProperty({ example: 12 })
+  @ApiProperty()
   @IsNumber()
-  @IsPositive()
   monthNumber: number;
 
-  @ApiProperty({ example: 50 })
+  @ApiProperty()
   @IsNumber()
-  @IsPositive()
   amount: number;
 }
 
 export class CreateQuoteDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  quizes?: string[];
+
   @ApiProperty({ type: PersonalInfoDto })
   @ValidateNested()
   @Type(() => PersonalInfoDto)
   personalInfo: PersonalInfoDto;
 
-  @ApiPropertyOptional({
-    type: [QuoteQuizAnswerDto],
-    description: 'List of quiz answers',
-  })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => QuoteQuizAnswerDto)
-  quizAnswers?: QuoteQuizAnswerDto[];
+  @IsString()
+  serviceId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsMongoId()
-  service?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsMongoId()
+  @IsString()
   controller?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsMongoId()
+  @IsString()
   extra?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-12' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
   surveyDate?: string;
 
-  @ApiPropertyOptional({ example: '2026-04-20' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
   installDate?: string;
 
-  @ApiPropertyOptional({ example: 'Dhaka, Bangladesh' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   installAddress?: string;
 
-  @ApiPropertyOptional({ example: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   payByCard?: boolean;
 
-  @ApiPropertyOptional({ example: true })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   payMonthly?: boolean;
 
   @ApiPropertyOptional({ type: PayMonthlyDataDto })
-  @ValidateIf((o) => o.payMonthly === true)
   @IsOptional()
   @ValidateNested()
   @Type(() => PayMonthlyDataDto)
