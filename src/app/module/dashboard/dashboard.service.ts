@@ -173,14 +173,14 @@ export class DashboardService {
       ],
       recentActivities: recentBookings.map((booking) => {
         const bookingItem = booking as typeof booking & { createdAt?: Date };
-        return {
-          name: booking.customerName,
-          email: booking.email,
-          phone: booking.phoneNumber,
-          action: booking.bookingType || 'Booking Created',
-          time: bookingItem.createdAt,
-          status: booking.status,
-        };
+        // return {
+        //   name: booking.customerName,
+        //   email: booking.email,
+        //   phone: booking.phoneNumber,
+        //   action: booking.bookingType || 'Booking Created',
+        //   time: bookingItem.createdAt,
+        //   status: booking.status,
+        // };
       }),
       recentContacts: recentContacts.map((contact) => {
         const contactItem = contact as typeof contact & { createdAt?: Date };

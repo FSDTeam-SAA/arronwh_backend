@@ -82,7 +82,7 @@
 // }
 
 import { HttpException, Injectable, Logger } from '@nestjs/common';
-import Twilio = require('twilio');
+import Twilio from 'twilio';
 import config from 'src/app/config';
 
 @Injectable()

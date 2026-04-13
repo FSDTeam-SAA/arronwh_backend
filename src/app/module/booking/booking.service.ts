@@ -1,11 +1,9 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingDto } from './dto/update-booking.dto';
 import { Booking, BookingDocument } from './entities/booking.entity';
-import { User, UserDocument } from '../user/entities/user.entity';
-import { Service, ServiceDocument } from '../service/entities/service.entity';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { CreateBookingDto } from './dto/create-booking.dto';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
@@ -15,112 +13,83 @@ export class BookingService {
   constructor(
     @InjectModel(Booking.name)
     private readonly bookingModel: Model<BookingDocument>,
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-    @InjectModel(Service.name)
-    private readonly serviceModel: Model<ServiceDocument>,
+    @InjectModel(Quote.name)
+    private readonly quoteModel: Model<QuoteDocument>,
   ) {}
 
-  async create(userId: string, createBookingDto: CreateBookingDto) {
-    const user = await this.userModel.findById(userId);
-    if (!user) {
-      throw new HttpException('User not found', 404);
+  async createBooking(createBookingDto: CreateBookingDto) {
+    const { quote } = createBookingDto;
+
+    // Verify quote exists
+    const quoteExists = await this.quoteModel.findById(quote);
+    if (!quoteExists) {
+      throw new BadRequestException(`Quote with id ${quote} not found.`);
     }
 
-    if (createBookingDto.service) {
-      const service = await this.serviceModel.findById(
-        createBookingDto.service,
+    // Check if booking already exists for this quote
+    const existingBooking = await this.bookingModel.findOne({ quote });
+    if (existingBooking) {
+      throw new BadRequestException(
+        `Booking already exists for quote ${quote}.`,
       );
-      if (!service) {
-        throw new HttpException('Service not found', 404);
-      }
     }
 
-    const booking = await this.bookingModel.create({
-      ...createBookingDto,
-      user: userId,
-      date: createBookingDto.date ?? new Date().toISOString().slice(0, 10),
-      due: createBookingDto.due ?? '',
-      status: createBookingDto.status ?? 'pending',
-      paymentStatus: createBookingDto.paymentStatus ?? 'unpaid',
-      quizAnswers: createBookingDto.quizAnswers ?? [],
-      selectedOptions: createBookingDto.selectedOptions ?? [],
-      bookingCalendar: createBookingDto.bookingCalendar ?? [],
-    });
-
-    return booking;
+    const newBooking = new this.bookingModel({ quote });
+    await newBooking.save();
+    return newBooking;
   }
 
-  async findAll(params: IFilterParams, options: IOptions) {
+  async getAllBookings(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = buildWhereConditions(params, [
-      'customerName',
-      'email',
-      'phoneNumber',
-      'bookingType',
-      'status',
-      'paymentStatus',
-      'bookingBy',
-    ]);
+    const whereConditions = buildWhereConditions(params, ['quote']);
 
     const total = await this.bookingModel.countDocuments(whereConditions);
-    const data = await this.bookingModel
+    const bookings = await this.bookingModel
       .find(whereConditions)
-      .sort({ [sortBy]: sortOrder } as never)
+      .sort({ [sortBy]: sortOrder } as any)
       .skip(skip)
       .limit(limit)
-      .populate('user', 'fullName email')
-      .populate('service', 'title price');
+      .populate({
+        path: 'quote',
+        populate: [
+          { path: 'serviceId' },
+          { path: 'controller' },
+          { path: 'extra' },
+        ],
+      });
 
     return {
-      meta: {
-        total,
-        page,
-        limit,
-      },
-      data,
+      data: bookings,
+      total,
+      page,
+      limit,
     };
   }
 
-  async findOne(id: string) {
-    const booking = await this.bookingModel
-      .findById(id)
-      .populate('user', 'fullName email phoneNumber')
-      .populate('service', 'title price images');
+  async getSingleBooking(id: string) {
+    const booking = await this.bookingModel.findById(id).populate({
+      path: 'quote',
+      populate: [
+        { path: 'serviceId' },
+        { path: 'controller' },
+        { path: 'extra' },
+      ],
+    });
 
     if (!booking) {
-      throw new HttpException('Booking not found', 404);
+      throw new BadRequestException(`Booking with id ${id} not found.`);
     }
 
     return booking;
   }
 
-  async update(id: string, updateBookingDto: UpdateBookingDto) {
+  async deleteBooking(id: string) {
     const booking = await this.bookingModel.findById(id);
     if (!booking) {
-      throw new HttpException('Booking not found', 404);
+      throw new BadRequestException(`Booking with id ${id} not found.`);
     }
 
-    if (updateBookingDto.service) {
-      const service = await this.serviceModel.findById(
-        updateBookingDto.service,
-      );
-      if (!service) {
-        throw new HttpException('Service not found', 404);
-      }
-    }
-
-    return this.bookingModel.findByIdAndUpdate(id, updateBookingDto, {
-      new: true,
-    });
-  }
-
-  async remove(id: string) {
-    const booking = await this.bookingModel.findById(id);
-    if (!booking) {
-      throw new HttpException('Booking not found', 404);
-    }
-
-    return booking.deleteOne();
+    await this.bookingModel.findByIdAndDelete(id);
+    return { message: `Booking with id ${id} has been deleted.` };
   }
 }

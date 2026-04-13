@@ -68,6 +68,7 @@ export class User {
 
   @Prop()
   stripeAccountId: string;
+
   @Prop()
   bio: string;
 }
