@@ -45,7 +45,11 @@ export class DashboardService {
           $match: {
             status: 'completed',
             createdAt: {
-              $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+              $gte: new Date(
+                new Date().getFullYear(),
+                new Date().getMonth(),
+                1,
+              ),
             },
           },
         },
@@ -56,7 +60,11 @@ export class DashboardService {
           $match: {
             status: 'completed',
             createdAt: {
-              $gte: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
+              $gte: new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() - 1,
+                1,
+              ),
               $lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
             },
           },
@@ -92,7 +100,11 @@ export class DashboardService {
     const previousMonthRevenue = previousMonthRevenueResult[0]?.total ?? 0;
     const revenueGrowth =
       previousMonthRevenue > 0
-        ? (((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100).toFixed(1)
+        ? (
+            ((currentMonthRevenue - previousMonthRevenue) /
+              previousMonthRevenue) *
+            100
+          ).toFixed(1)
         : currentMonthRevenue > 0
           ? '100.0'
           : '0.0';
@@ -161,14 +173,14 @@ export class DashboardService {
       ],
       recentActivities: recentBookings.map((booking) => {
         const bookingItem = booking as typeof booking & { createdAt?: Date };
-        return {
-          name: booking.customerName,
-          email: booking.email,
-          phone: booking.phoneNumber,
-          action: booking.bookingType || 'Booking Created',
-          time: bookingItem.createdAt,
-          status: booking.status,
-        };
+        // return {
+        //   name: booking.customerName,
+        //   email: booking.email,
+        //   phone: booking.phoneNumber,
+        //   action: booking.bookingType || 'Booking Created',
+        //   time: bookingItem.createdAt,
+        //   status: booking.status,
+        // };
       }),
       recentContacts: recentContacts.map((contact) => {
         const contactItem = contact as typeof contact & { createdAt?: Date };
