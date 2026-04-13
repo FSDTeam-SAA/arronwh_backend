@@ -13,14 +13,15 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
+import { Product, ProductDocument } from '../product/entitiy/product.entitiy';
 
 @Injectable()
 export class QuoteService {
   constructor(
     @InjectConnection() private readonly connection: Connection,
     @InjectModel(Quote.name) private readonly quoteModel: Model<QuoteDocument>,
-    @InjectModel(Service.name)
-    private readonly serviceModel: Model<ServiceDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
     @InjectModel(BoilerController.name)
     private readonly controllerModel: Model<BoilerControllerDocument>,
     @InjectModel(Extra.name)
@@ -28,7 +29,7 @@ export class QuoteService {
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
-    const { personalInfo, serviceId, quizes, ...rest } = createQuoteDto as any;
+    const { personalInfo, productId, quizes, ...rest } = createQuoteDto as any;
     if (
       !personalInfo ||
       !personalInfo.firstName ||
@@ -45,13 +46,13 @@ export class QuoteService {
     session.startTransaction();
 
     try {
-      if (serviceId) {
-        const serviceExists = await this.serviceModel
-          .findById(serviceId)
+      if (productId) {
+        const serviceExists = await this.productModel
+          .findById(productId)
           .session(session);
         if (!serviceExists) {
           throw new BadRequestException(
-            `Service with id ${serviceId} not found.`,
+            `Service with id ${productId} not found.`,
           );
         }
       }
@@ -81,7 +82,7 @@ export class QuoteService {
       const newQuote = new this.quoteModel({
         ...rest,
         personalInfo,
-        serviceId: serviceId ?? null,
+        productId: productId ?? null,
         quizes: quizes ?? [],
       });
 
@@ -101,7 +102,7 @@ export class QuoteService {
 
     const whereConditions = buildWhereConditions(params, [
       'personalInfo',
-      'serviceId',
+      'productId',
     ]);
 
     const total = await this.quoteModel.countDocuments(whereConditions);
@@ -110,7 +111,7 @@ export class QuoteService {
       .sort({ [sortBy]: sortOrder } as any)
       .skip(skip)
       .limit(limit)
-      .populate('serviceId')
+      .populate('productId')
       .populate('controller')
       .populate('extra');
 
@@ -125,7 +126,7 @@ export class QuoteService {
   async getSingleQuote(id: string) {
     const quote = await this.quoteModel
       .findById(id)
-      .populate('serviceId')
+      .populate('productId')
       .populate('controller')
       .populate('extra');
 
@@ -142,13 +143,13 @@ export class QuoteService {
       throw new BadRequestException(`Quote with id ${id} not found.`);
     }
 
-    if (updateData.service) {
-      const serviceExists = await this.serviceModel.findById(
-        updateData.service,
+    if (updateData.productId) {
+      const serviceExists = await this.productModel.findById(
+        updateData.productId,
       );
       if (!serviceExists) {
         throw new BadRequestException(
-          `Service with id ${updateData.service} not found.`,
+          `Service with id ${updateData.productId} not found.`,
         );
       }
     }
