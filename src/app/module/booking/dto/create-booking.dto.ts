@@ -153,11 +153,17 @@
 // }
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsPositive } from 'class-validator';
 
 export class CreateBookingDto {
   @ApiProperty({ description: 'Quote ID to create booking from' })
   @IsNotEmpty()
   @IsString()
   quote: string;
+
+  @ApiProperty({ description: 'Total price for the booking' })
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  price: number;
 }

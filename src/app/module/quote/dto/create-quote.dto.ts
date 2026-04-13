@@ -26,12 +26,12 @@ export class PersonalInfoDto {
   @ApiProperty({ example: 'John' })
   @IsNotEmpty()
   @IsString()
-  firstName: string;
+  fastName: string;
 
   @ApiProperty({ example: 'Doe' })
   @IsNotEmpty()
   @IsString()
-  lastName: string;
+  sureName: string;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsNotEmpty()
@@ -41,7 +41,7 @@ export class PersonalInfoDto {
   @ApiProperty({ example: '+8801XXXXXXXXX' })
   @IsNotEmpty()
   @IsString()
-  mobileNumber: string;
+  mobleNumber: string;
 }
 
 export class QuoteQuizAnswerDto {
@@ -54,7 +54,7 @@ export class QuoteQuizAnswerDto {
   answer: string;
 }
 
-export class PayMonthlyDataDto {
+export class PayMounthlyDataDto {
   @ApiProperty({ example: 100 })
   @IsNumber()
   @Min(0)
@@ -63,7 +63,7 @@ export class PayMonthlyDataDto {
   @ApiProperty({ example: 12 })
   @IsNumber()
   @IsPositive()
-  monthNumber: number;
+  mounthNumber: number;
 
   @ApiProperty({ example: 50 })
   @IsNumber()
@@ -125,12 +125,12 @@ export class CreateQuoteDto {
   @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
-  payMonthly?: boolean;
+  payMounthly?: boolean;
 
-  @ApiPropertyOptional({ type: PayMonthlyDataDto })
-  @ValidateIf((o) => o.payMonthly === true)
+  @ApiPropertyOptional({ type: PayMounthlyDataDto })
+  @ValidateIf((o) => o.payMounthly === true)
   @IsOptional()
   @ValidateNested()
-  @Type(() => PayMonthlyDataDto)
-  payMonthlyData?: PayMonthlyDataDto;
+  @Type(() => PayMounthlyDataDto)
+  payMounthlyData?: PayMounthlyDataDto;
 }
