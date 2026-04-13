@@ -93,4 +93,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   stripeAccountId?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @IsString()
+  bio?: string;
 }
