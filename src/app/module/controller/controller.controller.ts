@@ -35,44 +35,44 @@ import { fileUpload } from 'src/app/helpers/fileUploder';
 export class ControllerController {
   constructor(private readonly controllerService: ControllerService) {}
 
-@Post()
-@ApiOperation({ summary: 'Create a new controller' })
-@ApiBearerAuth('access-token')
-@UseGuards(AuthGuard('admin'))
-@ApiConsumes('multipart/form-data')
-@UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      title: { type: 'string', example: '' },
-      description: { type: 'string', example: '' },
-      badges: {
-        type: 'array',
-        items: { type: 'string' },
-        example: ['OUR BEST SELLER', 'Latest Model'],
-      },
-      price: { type: 'number', example: 299.99 },
-      discount: { type: 'number', example: 10 },
-      images: {
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
+  @Post()
+  @ApiOperation({ summary: 'Create a new controller' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: '' },
+        description: { type: 'string', example: '' },
+        badges: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['OUR BEST SELLER', 'Latest Model'],
+        },
+        price: { type: 'number', example: 299.99 },
+        discount: { type: 'number', example: 10 },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
       },
     },
-  },
-})
-@HttpCode(HttpStatus.CREATED)
-async create(
-  @Req() req: Request,                        // ← changed from @Body() dto
-  @UploadedFiles() files: Express.Multer.File[],
-) {
-  console.log('Received body:', req.body);    // ← now you'll see the actual data
-  const result = await this.controllerService.create(req.body, files);
-  return {
-    message: 'Controller created successfully',
-    data: result,
-  };
-}
+  })
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Req() req: Request, // ← changed from @Body() dto
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    console.log('Received body:', req.body); // ← now you'll see the actual data
+    const result = await this.controllerService.create(req.body, files);
+    return {
+      message: 'Controller created successfully',
+      data: result,
+    };
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all controllers' })
@@ -115,43 +115,43 @@ async create(
   }
 
   @Put(':id')
-@ApiOperation({ summary: 'Update a controller' })
-@ApiBearerAuth('access-token')
-@UseGuards(AuthGuard('admin'))
-@ApiConsumes('multipart/form-data')
-@UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
-@ApiBody({
-  schema: {
-    type: 'object',
-    properties: {
-      title: { type: 'string', example: '' },
-      description: { type: 'string', example: '' },
-      badges: {
-        type: 'array',
-        items: { type: 'string' },
-        example: ['OUR BEST SELLER'],
-      },
-      price: { type: 'number', example: 299.99 },
-      discount: { type: 'number', example: 10 },
-      images: {
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
+  @ApiOperation({ summary: 'Update a controller' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: '' },
+        description: { type: 'string', example: '' },
+        badges: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['OUR BEST SELLER'],
+        },
+        price: { type: 'number', example: 299.99 },
+        discount: { type: 'number', example: 10 },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
       },
     },
-  },
-})
-@HttpCode(HttpStatus.OK)
-async update(
-  @Param('id') id: string,
-  @Req() req: Request,
-  @UploadedFiles() files?: Express.Multer.File[],
-) {
-  const result = await this.controllerService.update(id, req.body, files);
-  return {
-    message: 'Controller updated successfully',
-    data: result,
-  };
-}
+  })
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    const result = await this.controllerService.update(id, req.body, files);
+    return {
+      message: 'Controller updated successfully',
+      data: result,
+    };
+  }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a controller' })
