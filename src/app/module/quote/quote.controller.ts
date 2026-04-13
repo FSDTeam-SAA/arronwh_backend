@@ -1,130 +1,87 @@
 import {
   Controller,
   Post,
+  Get,
+  Patch,
+  Delete,
   Body,
+  Param,
+  Query,
   HttpCode,
   HttpStatus,
-  Req,
-  Param,
-  Get,
-  Put,
-  UseGuards,
-  Delete,
 } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiQuery,
-} from '@nestjs/swagger';
-import type { Request } from 'express';
-import pick from 'src/app/helpers/pick';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
-import AuthGuard from 'src/app/middlewares/auth.guard';
+import { ApiBody, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 @Controller('quote')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
   @Post()
-  @ApiOperation({
-    summary: 'create quote',
-  })
-  @ApiBody({
-    type: CreateQuoteDto,
-  })
+  @ApiOperation({ summary: 'Create a quote' })
+  @ApiBody({ type: CreateQuoteDto })
   @HttpCode(HttpStatus.CREATED)
   async createQuote(@Body() createQuoteDto: CreateQuoteDto) {
     const result = await this.quoteService.createQuote(createQuoteDto);
-
     return {
-      message: 'create quote create successfully',
+      message: 'Quote created successfully',
       data: result,
     };
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'get all quotes',
-  })
-  @ApiQuery({
-    name: 'searchTerm',
-    required: false,
-    type: String,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-  })
+  @ApiOperation({ summary: 'Get all quotes' })
+  @ApiQuery({ name: 'searchTerm', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
   @HttpCode(HttpStatus.OK)
-  async getAllQuotes(@Req() req: Request) {
-    const filetrs = pick(req.query, ['searchTrem']);
-    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-    const result = await this.quoteService.getAllQuotes(filetrs, options);
-
+  async getAllQuotes(
+    @Query('searchTerm') searchTerm?: string,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ) {
+    const filters = searchTerm ? { searchTerm } : {};
+    const options = { limit, page };
+    const result = await this.quoteService.getAllQuotes(filters, options);
     return {
-      message: 'get all quotes successfully',
+      message: 'Quotes fetched successfully',
       data: result,
     };
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'get single quote',
-  })
+  @ApiOperation({ summary: 'Get a single quote' })
   @HttpCode(HttpStatus.OK)
   async getSingleQuote(@Param('id') id: string) {
     const result = await this.quoteService.getSingleQuote(id);
-
     return {
-      message: 'get single quote successfully',
+      message: 'Quote fetched successfully',
       data: result,
     };
   }
 
-  @Put(':id')
-  @ApiOperation({
-    summary: 'update quote',
-  })
-  @ApiBody({
-    type: UpdateQuoteDto,
-  })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a quote' })
+  @ApiBody({ type: UpdateQuoteDto })
   @HttpCode(HttpStatus.OK)
   async updateQuote(
     @Param('id') id: string,
-    @Body() updateData: UpdateQuoteDto,
+    @Body() updateQuoteDto: UpdateQuoteDto,
   ) {
-    const result = await this.quoteService.updateQuote(id, updateData);
-
+    const result = await this.quoteService.updateQuote(id, updateQuoteDto);
     return {
-      message: 'update quote successfully',
+      message: 'Quote updated successfully',
       data: result,
     };
   }
 
   @Delete(':id')
-  @ApiOperation({
-    summary: 'delete quote',
-  })
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
+  @ApiOperation({ summary: 'Delete a quote' })
   @HttpCode(HttpStatus.OK)
   async deleteQuote(@Param('id') id: string) {
     const result = await this.quoteService.deleteQuote(id);
-
-    return {
-      message: 'delete quote successfully',
-      data: result,
-    };
+    return result;
   }
 }
