@@ -52,7 +52,7 @@ export class BookingService {
       .populate({
         path: 'quote',
         populate: [
-          { path: 'serviceId' },
+          { path: 'productId' },
           { path: 'controller' },
           { path: 'extra' },
         ],
@@ -70,7 +70,7 @@ export class BookingService {
     const booking = await this.bookingModel.findById(id).populate({
       path: 'quote',
       populate: [
-        { path: 'serviceId' },
+        { path: 'productId' },
         { path: 'controller' },
         { path: 'extra' },
       ],
