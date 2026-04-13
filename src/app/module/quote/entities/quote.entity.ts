@@ -30,8 +30,8 @@ class personalInfo {
 
 @Schema({ timestamps: true })
 export class Quote {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Service' })
-  service?: Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product' })
+  productId?: Types.ObjectId;
 
   @Prop({ type: [QuoteQuizAnswer], _id: false, default: [] })
   quizAnswers: QuoteQuizAnswer[];

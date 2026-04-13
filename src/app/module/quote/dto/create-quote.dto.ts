@@ -90,7 +90,7 @@ export class CreateQuoteDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsMongoId()
-  service?: string;
+  productId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
