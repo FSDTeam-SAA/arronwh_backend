@@ -1,8 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateControllerDto } from './dto/create-controller.dto';
-import { UpdateControllerDto } from './dto/update-controller.dto';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { fileUpload } from 'src/app/helpers/fileUploder';
