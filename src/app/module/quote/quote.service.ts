@@ -31,10 +31,10 @@ export class QuoteService {
     const { personalInfo, serviceId, quizes, ...rest } = createQuoteDto as any;
     if (
       !personalInfo ||
-      !personalInfo.fastName ||
-      !personalInfo.sureName ||
+      !personalInfo.firstName ||
+      !personalInfo.surName ||
       !personalInfo.email ||
-      !personalInfo.mobleNumber
+      !personalInfo.mobileNumber
     ) {
       throw new BadRequestException(
         'Personal information is required to save a quote.',
@@ -49,7 +49,6 @@ export class QuoteService {
         const serviceExists = await this.serviceModel
           .findById(serviceId)
           .session(session);
-
         if (!serviceExists) {
           throw new BadRequestException(
             `Service with id ${serviceId} not found.`,
@@ -61,7 +60,6 @@ export class QuoteService {
         const controllerExists = await this.controllerModel
           .findById(rest.controller)
           .session(session);
-
         if (!controllerExists) {
           throw new BadRequestException(
             `Controller with id ${rest.controller} not found.`,
@@ -73,7 +71,6 @@ export class QuoteService {
         const extraExists = await this.extraModel
           .findById(rest.extra)
           .session(session);
-
         if (!extraExists) {
           throw new BadRequestException(
             `Extra with id ${rest.extra} not found.`,
@@ -95,21 +92,21 @@ export class QuoteService {
       await session.abortTransaction();
       throw error;
     } finally {
-      await session.endSession();
+      session.endSession();
     }
   }
 
   async getAllQuotes(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
 
-    const whenConditions = buildWhereConditions(params, [
+    const whereConditions = buildWhereConditions(params, [
       'personalInfo',
       'serviceId',
     ]);
 
-    const total = await this.quoteModel.countDocuments(whenConditions);
+    const total = await this.quoteModel.countDocuments(whereConditions);
     const quotes = await this.quoteModel
-      .find(whenConditions)
+      .find(whereConditions)
       .sort({ [sortBy]: sortOrder } as any)
       .skip(skip)
       .limit(limit)
@@ -141,18 +138,17 @@ export class QuoteService {
 
   async updateQuote(id: string, updateData: UpdateQuoteDto) {
     const quote = await this.quoteModel.findById(id);
-
     if (!quote) {
       throw new BadRequestException(`Quote with id ${id} not found.`);
     }
 
-    if (updateData.service) {
+    if (updateData.serviceId) {
       const serviceExists = await this.serviceModel.findById(
-        updateData.service,
+        updateData.serviceId,
       );
       if (!serviceExists) {
         throw new BadRequestException(
-          `Service with id ${updateData.service} not found.`,
+          `Service with id ${updateData.serviceId} not found.`,
         );
       }
     }
@@ -180,13 +176,11 @@ export class QuoteService {
     const result = await this.quoteModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
-
     return result;
   }
 
   async deleteQuote(id: string) {
     const quote = await this.quoteModel.findById(id);
-
     if (!quote) {
       throw new BadRequestException(`Quote with id ${id} not found.`);
     }

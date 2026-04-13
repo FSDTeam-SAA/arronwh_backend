@@ -3,41 +3,31 @@ import mongoose, { HydratedDocument, Types } from 'mongoose';
 
 export type QuoteDocument = HydratedDocument<Quote>;
 
-class QuoteQuizAnswer {
-  @Prop()
-  question: string;
-
-  @Prop()
-  answer: string;
-}
-
-class personalInfo {
-  @Prop()
-  title: string;
-
-  @Prop()
-  fastName: string;
-
-  @Prop()
-  sureName: string;
-
-  @Prop()
-  email: string;
-
-  @Prop()
-  mobleNumber: string;
-}
-
 @Schema({ timestamps: true })
 export class Quote {
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Quize' })
+  quizes: Types.ObjectId[];
+
+  @Prop({
+    type: {
+      title: { type: String },
+      firstName: { type: String },
+      surName: { type: String },
+      email: { type: String },
+      mobileNumber: { type: String },
+    },
+    required: false,
+  })
+  personalInfo: {
+    title: string;
+    firstName: string;
+    surName: string;
+    email: string;
+    mobileNumber: string;
+  };
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Service' })
-  service?: Types.ObjectId;
-
-  @Prop({ type: [QuoteQuizAnswer], _id: false, default: [] })
-  quizAnswers: QuoteQuizAnswer[];
-
-  @Prop({ type: personalInfo })
-  personalInfo: personalInfo;
+  serviceId: Types.ObjectId;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'BoilerController' })
   controller: Types.ObjectId;
@@ -58,19 +48,19 @@ export class Quote {
   payByCard: boolean;
 
   @Prop()
-  payMounthly: boolean;
+  payMonthly: boolean;
 
   @Prop({
     type: {
       deposit: { type: Number },
-      mounthNumber: { type: Number },
+      monthNumber: { type: Number },
       amount: { type: Number },
     },
     required: false,
   })
-  payMounthlyData: {
+  payMonthlyData: {
     deposit: number;
-    mounthNumber: number;
+    monthNumber: number;
     amount: number;
   };
 }
