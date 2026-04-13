@@ -129,6 +129,7 @@ async update(id: string, body: any, files?: Express.Multer.File[]) {
     }
 
     const total = await this.controllerModel.countDocuments(whereConditions);
+    // console.log('Query Parameters:', { limit, page, skip, sortBy, sortOrder }, 'Search Term:', searchTerm, 'Filter Data:', filterData, 'Total:', total);
 
     const data = await this.controllerModel
       .find(whereConditions)
