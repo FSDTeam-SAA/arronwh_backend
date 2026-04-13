@@ -73,6 +73,9 @@ export class Quote {
     mounthNumber: number;
     amount: number;
   };
+
+  @Prop({ type: mongoose.Types.ObjectId, ref: 'Booking' })
+  bookingId: Types.ObjectId;
 }
 
 export const QuoteSchema = SchemaFactory.createForClass(Quote);
