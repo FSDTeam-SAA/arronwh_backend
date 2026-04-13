@@ -12,8 +12,8 @@ import { FaqModule } from './app/module/faq/faq.module';
 import { ServiceModule } from './app/module/service/service.module';
 import { AuthModule } from './app/module/auth/auth.module';
 import { TwilioModule } from './app/module/twilio/twilio.module';
-import { Product } from './app/module/product/entitiy/product.entitiy';
 import { ProductModule } from './app/module/product/product.module';
+import { UserModule } from './app/module/user/user.module';
 
 // const databaseImports = config.isMongoEnabled
 //   ? [
@@ -37,6 +37,7 @@ import { ProductModule } from './app/module/product/product.module';
     ServiceModule,
     TwilioModule,
     ProductModule,
+    UserModule,
   ],
 
   controllers: [AppController],
