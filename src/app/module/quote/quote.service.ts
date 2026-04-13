@@ -142,13 +142,13 @@ export class QuoteService {
       throw new BadRequestException(`Quote with id ${id} not found.`);
     }
 
-    if (updateData.serviceId) {
+    if (updateData.service) {
       const serviceExists = await this.serviceModel.findById(
-        updateData.serviceId,
+        updateData.service,
       );
       if (!serviceExists) {
         throw new BadRequestException(
-          `Service with id ${updateData.serviceId} not found.`,
+          `Service with id ${updateData.service} not found.`,
         );
       }
     }
