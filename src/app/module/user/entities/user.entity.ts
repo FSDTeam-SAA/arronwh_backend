@@ -68,6 +68,8 @@ export class User {
 
   @Prop()
   stripeAccountId: string;
+  @Prop()
+  bio: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
