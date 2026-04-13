@@ -3,7 +3,6 @@ import { CreateQuoteDto } from './dto/create-quote.dto';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
 import { Quote, QuoteDocument } from './entities/quote.entity';
-import { Service, ServiceDocument } from '../service/entities/service.entity';
 import {
   BoilerController,
   BoilerControllerDocument,
@@ -29,13 +28,14 @@ export class QuoteService {
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
-    const { personalInfo, productId, quizes, ...rest } = createQuoteDto as any;
+    const { personalInfo, productId, quizAnswers, ...rest } =
+      createQuoteDto as any;
     if (
       !personalInfo ||
-      !personalInfo.firstName ||
-      !personalInfo.surName ||
+      !personalInfo.fastName ||
+      !personalInfo.sureName ||
       !personalInfo.email ||
-      !personalInfo.mobileNumber
+      !personalInfo.mobleNumber
     ) {
       throw new BadRequestException(
         'Personal information is required to save a quote.',
@@ -47,12 +47,12 @@ export class QuoteService {
 
     try {
       if (productId) {
-        const serviceExists = await this.productModel
+        const productExists = await this.productModel
           .findById(productId)
           .session(session);
-        if (!serviceExists) {
+        if (!productExists) {
           throw new BadRequestException(
-            `Service with id ${productId} not found.`,
+            `Product with id ${productId} not found.`,
           );
         }
       }
@@ -83,7 +83,7 @@ export class QuoteService {
         ...rest,
         personalInfo,
         productId: productId ?? null,
-        quizes: quizes ?? [],
+        quizAnswers: quizAnswers ?? [],
       });
 
       await newQuote.save({ session });
