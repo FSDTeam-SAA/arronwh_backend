@@ -43,14 +43,14 @@ export class TwilioController {
   //   };
   // }
   @Post('make')
-@HttpCode(HttpStatus.OK)
-async makeCall(@Body() body: MakeCallDto) {
-  const result = await this.twilioService.makeCall(body.to);
-  return {
-    message: 'Call initiated successfully',
-    data: result,
-  };
-}
+  @HttpCode(HttpStatus.OK)
+  async makeCall(@Body() body: MakeCallDto) {
+    const result = await this.twilioService.makeCall(body.to);
+    return {
+      message: 'Call initiated successfully',
+      data: result,
+    };
+  }
 
   @Post('twiml')
   @ApiOperation({ summary: 'Twilio webhook for call instructions' })
@@ -73,7 +73,11 @@ async makeCall(@Body() body: MakeCallDto) {
 
   @Get(':sid')
   @ApiOperation({ summary: 'Get call details by SID' })
-  @ApiParam({ name: 'sid', description: 'Twilio call SID', example: 'CA123456789' })
+  @ApiParam({
+    name: 'sid',
+    description: 'Twilio call SID',
+    example: 'CA123456789',
+  })
   // @ApiBearerAuth('access-token')
   // @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)

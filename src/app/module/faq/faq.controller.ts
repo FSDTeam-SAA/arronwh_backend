@@ -43,7 +43,7 @@ export class FaqController {
     },
   })
   @HttpCode(HttpStatus.CREATED)
- async createFaq(@Body() body: CreateFaqDto) {
+  async createFaq(@Body() body: CreateFaqDto) {
     const result = await this.faqService.createFaq(body);
     return {
       message: 'FAQ created successfully',
@@ -56,8 +56,18 @@ export class FaqController {
   @ApiQuery({ name: 'searchTerm', required: false, type: String, example: '' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, example: 'createdAt' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], example: 'desc' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   @HttpCode(HttpStatus.OK)
   async getAllFaq(@Req() req: Request) {
     const filters = pick(req.query, ['searchTerm']);
@@ -94,7 +104,7 @@ export class FaqController {
     },
   })
   @HttpCode(HttpStatus.OK)
- async updateFaq(@Param('id') id: string, @Body() body: UpdateFaqDto) {
+  async updateFaq(@Param('id') id: string, @Body() body: UpdateFaqDto) {
     const result = await this.faqService.updateFaq(id, body);
     return {
       message: 'FAQ updated successfully',

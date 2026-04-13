@@ -37,8 +37,14 @@ export class BookingController {
   @UseGuards(AuthGuard('admin', 'user'))
   @ApiBody({ type: CreateBookingDto })
   @HttpCode(HttpStatus.CREATED)
-  async create(@Req() req: Request, @Body() createBookingDto: CreateBookingDto) {
-    const result = await this.bookingService.create(req.user!.id, createBookingDto);
+  async create(
+    @Req() req: Request,
+    @Body() createBookingDto: CreateBookingDto,
+  ) {
+    const result = await this.bookingService.create(
+      req.user!.id,
+      createBookingDto,
+    );
     return {
       message: 'Booking created successfully',
       data: result,
@@ -51,12 +57,27 @@ export class BookingController {
   @UseGuards(AuthGuard('admin'))
   @ApiQuery({ name: 'searchTerm', required: false, type: String, example: '' })
   @ApiQuery({ name: 'status', required: false, type: String, example: '' })
-  @ApiQuery({ name: 'paymentStatus', required: false, type: String, example: '' })
+  @ApiQuery({
+    name: 'paymentStatus',
+    required: false,
+    type: String,
+    example: '',
+  })
   @ApiQuery({ name: 'bookingType', required: false, type: String, example: '' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, example: 'createdAt' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], example: 'desc' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   @HttpCode(HttpStatus.OK)
   async findAll(@Req() req: Request) {
     const filters = pick(req.query, [

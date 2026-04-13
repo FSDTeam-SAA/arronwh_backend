@@ -6,9 +6,7 @@ import { Extra, ExtraSchema } from './entities/extra.entities';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Extra.name, schema: ExtraSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Extra.name, schema: ExtraSchema }]),
   ],
   controllers: [ExtraController],
   providers: [ExtraService],
