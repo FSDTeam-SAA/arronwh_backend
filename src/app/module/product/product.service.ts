@@ -162,11 +162,76 @@ export class ProductService {
     return product;
   }
 
-  async updateProductById(id: string, dto: UpdateProductDto) {
-    const product = await this.productModel.findById(id);
-    if (!product) throw new HttpException('Product not found', 404);
-    return this.productModel.findByIdAndUpdate(id, dto, { new: true });
+  // async updateProductById(id: string, dto: UpdateProductDto) {
+  //   const product = await this.productModel.findById(id);
+  //   if (!product) throw new HttpException('Product not found', 404);
+  //   return this.productModel.findByIdAndUpdate(id, dto, { new: true });
+  // }
+  async updateProductById(
+  id: string,
+  data: string,
+  files: UploadedProductFiles,
+) {
+  const product = await this.productModel.findById(id);
+  if (!product) throw new HttpException('Product not found', 404);
+
+  const payload = this.parseJson<UpdateProductDto>(data, {} as UpdateProductDto);
+
+  // Upload new images only if provided, otherwise keep existing
+  const [images, includedImages, featureLogo] = await Promise.all([
+    files.images?.length ? this.uploadMany(files.images) : Promise.resolve(undefined),
+    files.includedImages?.length ? this.uploadMany(files.includedImages) : Promise.resolve(undefined),
+    files.featureLogo?.length ? this.uploadMany(files.featureLogo) : Promise.resolve(undefined),
+  ]);
+
+  // Handle boilerInstallationGuide — upload new images if provided
+  let boilerInstallationGuide: { title: string; image: string }[] | undefined;
+  if (Array.isArray(payload.boilerInstallationGuide)) {
+    const guideImageFiles = this.getValidFiles(files.installationGuideImages);
+    const guideImageUrls = await this.uploadMany(guideImageFiles);
+    boilerInstallationGuide = payload.boilerInstallationGuide.map((item, i) => ({
+      title: item.title?.trim() ?? '',
+      image: guideImageUrls[i] ?? item.image ?? '',
+    }));
   }
+
+  // Build update payload — only include fields that were actually sent
+  const updateData: Record<string, unknown> = {};
+
+  if (payload.title !== undefined) updateData.title = payload.title.trim();
+  if (payload.description !== undefined) updateData.description = payload.description.trim();
+  if (payload.shortDescription !== undefined) updateData.shortDescription = payload.shortDescription.trim();
+  if (payload.boilerAbility !== undefined) updateData.boilerAbility = payload.boilerAbility.trim();
+  if (payload.boilerIncludedData !== undefined) updateData.boilerIncludedData = payload.boilerIncludedData.trim();
+  if (payload.badges !== undefined) updateData.badges = this.normalizeStringArray(payload.badges);
+  if (payload.price !== undefined) updateData.price = this.normalizeNumber(payload.price);
+  if (payload.discountPrice !== undefined) updateData.discountPrice = this.normalizeNumber(payload.discountPrice);
+  if (payload.payablePrice !== undefined) updateData.payablePrice = this.normalizeNumber(payload.payablePrice);
+  if (payload.monthlyPrice !== undefined) updateData.monthlyPrice = this.normalizeNumber(payload.monthlyPrice);
+
+  if (Array.isArray(payload.boilerFeatures)) {
+    updateData.boilerFeatures = payload.boilerFeatures
+      .filter((f) => f.title?.trim() && f.value?.trim())
+      .map((f) => ({ title: f.title.trim(), value: f.value.trim() }));
+  }
+
+  if (payload.featureInformation !== undefined) {
+    updateData.featureInformation = {
+      featureTitle: payload.featureInformation?.featureTitle?.trim(),
+      featureDescription: payload.featureInformation?.featureDescription?.trim(),
+      featureLogo: featureLogo ?? product.featureInformation?.featureLogo ?? [],
+    };
+  } else if (featureLogo) {
+    // New featureLogo files uploaded but no featureInformation payload — just update the logo
+    updateData['featureInformation.featureLogo'] = featureLogo;
+  }
+
+  if (images) updateData.images = images;
+  if (includedImages) updateData.includedImages = includedImages;
+  if (boilerInstallationGuide) updateData.boilerInstallationGuide = boilerInstallationGuide;
+
+  return this.productModel.findByIdAndUpdate(id, { $set: updateData }, { new: true });
+}
 
   async deleteProductById(id: string) {
     const product = await this.productModel.findById(id);
