@@ -35,7 +35,8 @@ export class QuoteService {
       !personalInfo.fastName ||
       !personalInfo.sureName ||
       !personalInfo.email ||
-      !personalInfo.mobleNumber
+      !personalInfo.mobleNumber ||
+      !personalInfo.postcode
     ) {
       throw new BadRequestException(
         'Personal information is required to save a quote.',
