@@ -42,6 +42,11 @@ export class PersonalInfoDto {
   @IsNotEmpty()
   @IsString()
   mobleNumber: string;
+
+  @ApiProperty({ example: '12345' })
+  @IsNotEmpty()
+  @IsString()
+  postcode: string;
 }
 
 export class QuoteQuizAnswerDto {
