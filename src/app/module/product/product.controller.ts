@@ -169,19 +169,82 @@ export class ProductController {
     return { message: 'Product retrieved successfully', data: result };
   }
 
-  @Put(':id')
-  @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('admin'))
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Update product by ID' })
-  @ApiParam({ name: 'id', type: String })
-  async updateProductById(
-    @Param('id') id: string,
-    @Body() dto: UpdateProductDto,
-  ) {
-    const result = await this.productService.updateProductById(id, dto);
-    return { message: 'Product updated successfully', data: result };
-  }
+  // @Put(':id')
+  // @ApiBearerAuth('access-token')
+  // @UseGuards(AuthGuard('admin'))
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({ summary: 'Update product by ID' })
+  // @ApiParam({ name: 'id', type: String })
+  // async updateProductById(
+  //   @Param('id') id: string,
+  //   @Body() dto: UpdateProductDto,
+  // ) {
+  //   const result = await this.productService.updateProductById(id, dto);
+  //   return { message: 'Product updated successfully', data: result };
+  // }
+
+@Put(':id')
+@ApiBearerAuth('access-token')
+@UseGuards(AuthGuard('admin'))
+@HttpCode(HttpStatus.OK)
+@ApiConsumes('multipart/form-data')
+@ApiOperation({ summary: 'Update product by ID' })
+@ApiParam({ name: 'id', type: String })
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      data: {
+        type: 'string',
+        example: JSON.stringify(
+          {
+            title: 'Updated Boiler Pro 25kw',
+            description: 'Updated description.',
+            shortDescription: 'Updated short description.',
+            badges: ['Popular', 'New'],
+            price: 1300,
+            discountPrice: 1100,
+            payablePrice: 1000,
+            monthlyPrice: 90,
+            boilerAbility: '40 to 30kw',
+            boilerFeatures: [{ title: 'Energy Efficient', value: 'A+ rated' }],
+            featureInformation: {
+              featureTitle: 'Why Choose Us',
+              featureDescription: 'Industry leading quality.',
+            },
+            boilerIncludedData: 'Includes all fittings and parts.',
+            boilerInstallationGuide: [{ title: 'Step 1: Mount the unit', image: '' }],
+          },
+          null,
+          2,
+        ),
+      },
+      images: { type: 'array', items: { type: 'string', format: 'binary' } },
+      includedImages: { type: 'array', items: { type: 'string', format: 'binary' } },
+      featureLogo: { type: 'array', items: { type: 'string', format: 'binary' } },
+      installationGuideImages: { type: 'array', items: { type: 'string', format: 'binary' } },
+    },
+  },
+})
+@UseInterceptors(
+  FileFieldsInterceptor(
+    [
+      { name: 'images', maxCount: 10 },
+      { name: 'includedImages', maxCount: 10 },
+      { name: 'featureLogo', maxCount: 10 },
+      { name: 'installationGuideImages', maxCount: 20 },
+    ],
+    fileUpload.uploadConfig,
+  ),
+)
+async updateProductById(
+  @Param('id') id: string,
+  @Body('data') data: string,
+  @UploadedFiles() files: UploadedProductFiles,
+) {
+  const result = await this.productService.updateProductById(id, data, files);
+  return { message: 'Product updated successfully', data: result };
+}
 
   @Delete(':id')
   @ApiBearerAuth('access-token')
