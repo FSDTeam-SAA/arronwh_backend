@@ -26,6 +26,9 @@ class personalInfo {
 
   @Prop()
   mobleNumber: string;
+
+  @Prop()
+  postcode: string;
 }
 
 @Schema({ timestamps: true })
