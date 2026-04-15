@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Booking, BookingDocument } from './entities/booking.entity';
@@ -39,7 +39,10 @@ export class BookingService {
 
   async getAllBookings(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = buildWhereConditions(params, ['quote']);
+    const whereConditions = buildWhereConditions(params, [
+      'status',
+      'bookingFor',
+    ]);
 
     const total = await this.bookingModel.countDocuments(whereConditions);
     const bookings = await this.bookingModel
@@ -58,9 +61,11 @@ export class BookingService {
 
     return {
       data: bookings,
-      total,
-      page,
-      limit,
+      meta: {
+        total,
+        page,
+        limit,
+      },
     };
   }
 
@@ -89,5 +94,20 @@ export class BookingService {
 
     await this.bookingModel.findByIdAndDelete(id);
     return { message: `Booking with id ${id} has been deleted.` };
+  }
+
+  async bookingForUpdate(id: string, bookingFor: string) {
+    const booking = await this.bookingModel.findById(id);
+    if (!booking) throw new HttpException('Booking is not found', 404);
+
+    const result = await this.bookingModel.findByIdAndUpdate(
+      id,
+      {
+        bookingFor,
+      },
+      { new: true },
+    );
+
+    return result;
   }
 }
