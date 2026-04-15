@@ -17,6 +17,13 @@ export class Booking {
     default: 'pending',
   })
   status: string;
+
+  @Prop({
+    type: String,
+    enum: ['survey', 'installation'],
+    default: 'survey',
+  })
+  bookingFor: string;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
