@@ -153,7 +153,13 @@
 // }
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, IsPositive } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsPositive,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateBookingDto {
   @ApiProperty({ description: 'Quote ID to create booking from' })
@@ -166,4 +172,14 @@ export class CreateBookingDto {
   @IsNumber()
   @IsPositive()
   price: number;
+}
+
+export class UpdateBookingForDto {
+  @ApiProperty({
+    enum: ['survey', 'installation'],
+    example: 'survey',
+    description: 'Type of booking',
+  })
+  @IsEnum(['survey', 'installation'])
+  bookingFor: string;
 }
