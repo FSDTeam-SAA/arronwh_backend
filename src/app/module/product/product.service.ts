@@ -104,6 +104,9 @@ export class ProductService {
       image: guideImageUrls[i] ?? item.image ?? '',
     }));
 
+    const payablePrice = payload.price && payload.discountPrice ? payload.price - payload.discountPrice : undefined;
+    const monthlyPrice = payablePrice ? Math.ceil(payablePrice / 12) : undefined;
+
     return this.productModel.create({
       user: userId,
       title: payload.title?.trim(),
@@ -113,8 +116,8 @@ export class ProductService {
       badges: this.normalizeStringArray(payload.badges),
       price: this.normalizeNumber(payload.price),
       discountPrice: this.normalizeNumber(payload.discountPrice),
-      payablePrice: this.normalizeNumber(payload.payablePrice),
-      monthlyPrice: this.normalizeNumber(payload.monthlyPrice),
+      payablePrice: payablePrice,
+      monthlyPrice: monthlyPrice,
       boilerAbility: payload.boilerAbility?.trim(),
       boilerFeatures: Array.isArray(payload.boilerFeatures)
         ? payload.boilerFeatures
