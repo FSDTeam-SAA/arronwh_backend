@@ -51,6 +51,17 @@ export class QuoteController {
     };
   }
 
+  @Get('install-survey-data')
+  @ApiOperation({ summary: 'Get survey and install date data for quotes' })
+  @HttpCode(HttpStatus.OK)
+  async getQuoteSurveyAndInstallData() {
+    const result = await this.quoteService.quoteUseServeDataInstallDate();
+    return {
+      message: 'Quote survey and install date data fetched successfully',
+      data: result,
+    };
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single quote' })
   @HttpCode(HttpStatus.OK)
