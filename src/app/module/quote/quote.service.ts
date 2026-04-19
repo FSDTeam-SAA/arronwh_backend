@@ -190,4 +190,12 @@ export class QuoteService {
     await this.quoteModel.findByIdAndDelete(id);
     return { message: `Quote with id ${id} has been deleted.` };
   }
+
+  async quoteUseServeDataInstallDate() {
+    const quote = await this.quoteModel.find();
+    return {
+      surveyDate: quote.map((item) => item.surveyDate),
+      installDate: quote.map((item) => item.installDate),
+    };
+  }
 }
