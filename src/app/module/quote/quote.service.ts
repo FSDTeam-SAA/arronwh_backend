@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException } from '@nestjs/common';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model } from 'mongoose';
@@ -13,6 +13,8 @@ import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { Product, ProductDocument } from '../product/entitiy/product.entitiy';
+import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
+import sendMailer from 'src/app/helpers/sendMailer';
 
 @Injectable()
 export class QuoteService {
@@ -197,5 +199,25 @@ export class QuoteService {
       surveyDate: quote.map((item) => item.surveyDate),
       installDate: quote.map((item) => item.installDate),
     };
+  }
+
+  async emailQuote(quoteId: string) {
+    const quote = await this.quoteModel
+      .findById(quoteId)
+      .populate('productId', 'title price payablePrice monthlyPrice')
+      .populate('controller', 'title price')
+      .populate('extra', 'title price')
+      .lean();
+
+    if (!quote) throw new HttpException('Quote not found', 404);
+
+    const email = quote.personalInfo?.email;
+    if (!email) throw new HttpException('No email address found on this quote', 400);
+
+    const html = quoteEmailTemplate(quote);
+
+    await sendMailer(email, 'Your Quote Summary', html);
+
+    return { message: 'Quote emailed successfully', sentTo: email };
   }
 }
