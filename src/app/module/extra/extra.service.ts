@@ -5,6 +5,8 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { fileUpload } from 'src/app/helpers/fileUploder';
 import { Extra, ExtraDocument } from './entities/extra.entities';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 
 const extraSearchableFields = ['title'];
 
@@ -13,7 +15,56 @@ export class ExtraService {
   constructor(
     @InjectModel(Extra.name)
     private readonly extraModel: Model<ExtraDocument>,
+    @InjectModel(Quote.name) private readonly quoteModel: Model<QuoteDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
+
+  private async getBookingCountMap(): Promise<Map<string, number>> {
+    const bookingCounts = await this.bookingModel.aggregate([
+      {
+        $lookup: {
+          from: this.quoteModel.collection.name,
+          localField: 'quote',
+          foreignField: '_id',
+          as: 'quoteData',
+        },
+      },
+      { $unwind: '$quoteData' },
+      {
+        $match: {
+          'quoteData.extra': {
+            $exists: true,
+            $ne: null,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$quoteData.extra',
+          bookingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return new Map(
+      bookingCounts.map((item) => [String(item._id), Number(item.bookingCount)]),
+    );
+  }
+
+  private compareValues(a: unknown, b: unknown, sortOrder: string) {
+    const direction = sortOrder === 'asc' ? 1 : -1;
+
+    if (a instanceof Date && b instanceof Date) {
+      return (a.getTime() - b.getTime()) * direction;
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+      return (a - b) * direction;
+    }
+
+    return String(a ?? '').localeCompare(String(b ?? '')) * direction;
+  }
 
   async create(body: any, files?: Express.Multer.File[]) {
     const payload: any = {
@@ -57,13 +108,39 @@ export class ExtraService {
       }));
     }
 
-    const total = await this.extraModel.countDocuments(whereConditions);
+    const [total, extras, bookingCountMap] = await Promise.all([
+      this.extraModel.countDocuments(whereConditions),
+      this.extraModel.find(whereConditions).lean(),
+      this.getBookingCountMap(),
+    ]);
 
-    const data = await this.extraModel
-      .find(whereConditions)
-      .skip(skip)
-      .limit(limit)
-      .sort({ [sortBy]: sortOrder } as any);
+    const highestBookingCount = extras.reduce((max, extra) => {
+      const bookingCount = bookingCountMap.get(String(extra._id)) ?? 0;
+      return Math.max(max, bookingCount);
+    }, 0);
+
+    const data = extras
+      .map((extra) => {
+        const bookingCount = bookingCountMap.get(String(extra._id)) ?? 0;
+        return {
+          ...extra,
+          bookingCount,
+          isBestSeller:
+            highestBookingCount > 0 && bookingCount === highestBookingCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.bookingCount !== a.bookingCount) {
+          return b.bookingCount - a.bookingCount;
+        }
+
+        return this.compareValues(
+          a[sortBy as keyof typeof a],
+          b[sortBy as keyof typeof b],
+          sortOrder,
+        );
+      })
+      .slice(skip, skip + limit);
 
     return {
       meta: { page, limit, total },
