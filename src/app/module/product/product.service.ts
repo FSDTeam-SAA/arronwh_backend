@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { fileUpload } from 'src/app/helpers/fileUploder';
 import { IFilterParams } from 'src/app/helpers/pick';
@@ -9,6 +9,8 @@ import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import { Product, ProductDocument } from './entitiy/product.entitiy';
 import { CreateProductDto } from './dto/create.dto';
 import { UpdateProductDto } from './dto/update.dto';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 
 export type UploadedProductFiles = {
   images?: Express.Multer.File[];
@@ -23,7 +25,58 @@ export class ProductService {
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Quote.name) private readonly quoteModel: Model<QuoteDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
+
+  private async getBookingCountMap(
+    quoteField: 'productId' | 'controller' | 'extra',
+  ): Promise<Map<string, number>> {
+    const bookingCounts = await this.bookingModel.aggregate([
+      {
+        $lookup: {
+          from: this.quoteModel.collection.name,
+          localField: 'quote',
+          foreignField: '_id',
+          as: 'quoteData',
+        },
+      },
+      { $unwind: '$quoteData' },
+      {
+        $match: {
+          [`quoteData.${quoteField}`]: {
+            $exists: true,
+            $ne: null,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: `$quoteData.${quoteField}`,
+          bookingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return new Map(
+      bookingCounts.map((item) => [String(item._id), Number(item.bookingCount)]),
+    );
+  }
+
+  private compareValues(a: unknown, b: unknown, sortOrder: string) {
+    const direction = sortOrder === 'asc' ? 1 : -1;
+
+    if (a instanceof Date && b instanceof Date) {
+      return (a.getTime() - b.getTime()) * direction;
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+      return (a - b) * direction;
+    }
+
+    return String(a ?? '').localeCompare(String(b ?? '')) * direction;
+  }
 
   private parseJson<T>(value: string | undefined, fallback: T): T {
     if (!value) return fallback;
@@ -145,16 +198,46 @@ export class ProductService {
       'boilerAbility',
       'boilerIncludedData',
     ]);
-    const [total, data] = await Promise.all([
+    const [total, products, bookingCountMap] = await Promise.all([
       this.productModel.countDocuments(whereConditions),
       this.productModel
         .find(whereConditions)
-        .sort({ [sortBy]: sortOrder } as never)
-        .skip(skip)
-        .limit(limit)
+        .lean()
         .populate('user', 'fullName email'),
+      this.getBookingCountMap('productId'),
     ]);
-    return { meta: { total, page, limit }, data };
+
+    const highestBookingCount = products.reduce((max, product) => {
+      const bookingCount = bookingCountMap.get(String(product._id)) ?? 0;
+      return Math.max(max, bookingCount);
+    }, 0);
+
+    const rankedProducts = products
+      .map((product) => {
+        const bookingCount = bookingCountMap.get(String(product._id)) ?? 0;
+        return {
+          ...product,
+          bookingCount,
+          isBestSeller:
+            highestBookingCount > 0 && bookingCount === highestBookingCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.bookingCount !== a.bookingCount) {
+          return b.bookingCount - a.bookingCount;
+        }
+
+        return this.compareValues(
+          a[sortBy as keyof typeof a],
+          b[sortBy as keyof typeof b],
+          sortOrder,
+        );
+      });
+
+    return {
+      meta: { total, page, limit },
+      data: rankedProducts.slice(skip, skip + limit),
+    };
   }
 
   async getProductById(id: string) {

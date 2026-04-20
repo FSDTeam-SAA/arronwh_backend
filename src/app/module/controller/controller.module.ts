@@ -6,11 +6,15 @@ import {
   BoilerController,
   BoilerControllerSchema,
 } from './entities/controller.entities';
+import { Quote, QuoteSchema } from '../quote/entities/quote.entity';
+import { Booking, BookingSchema } from '../booking/entities/booking.entity';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: BoilerController.name, schema: BoilerControllerSchema },
+      { name: Quote.name, schema: QuoteSchema },
+      { name: Booking.name, schema: BookingSchema },
     ]),
   ],
   controllers: [ControllerController],

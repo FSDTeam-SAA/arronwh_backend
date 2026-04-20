@@ -22,6 +22,9 @@ export class Extra {
 
   @Prop({ type: [String], default: [] })
   images: string[];
+
+  @Prop({default: false})
+  isBestSeller: boolean;
 }
 
 export const ExtraSchema = SchemaFactory.createForClass(Extra);
