@@ -95,4 +95,13 @@ export class QuoteController {
     const result = await this.quoteService.deleteQuote(id);
     return result;
   }
+
+  //email functionality will be added later add by mahabur
+
+  @Post(':id/email')
+  @ApiOperation({ summary: 'Send quote via email' })
+  @HttpCode(HttpStatus.OK)
+  async emailQuote(@Param('id') id: string) {
+    return this.quoteService.emailQuote(id);
+  }
 }

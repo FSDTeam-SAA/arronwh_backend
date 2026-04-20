@@ -9,6 +9,8 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
+import sendMailer from 'src/app/helpers/sendMailer';
 
 @Injectable()
 export class PaymentService {
@@ -85,11 +87,14 @@ export class PaymentService {
         amount: String(booking.price),
       },
     });
-
+     const html = quoteEmailTemplate(quote);
+     const email = quote.personalInfo?.email;
     // 6. Save or update payment record
     if (existingPending) {
       existingPending.stripePaymentIntentId = paymentIntent.id;
       existingPending.amount = booking.price;
+      //send email to user if payment intent already exists but not completed yet
+      await sendMailer(email!, 'Your pending payment is completed', html);
       await existingPending.save();
     } else {
       await this.paymentModel.create({
@@ -101,6 +106,8 @@ export class PaymentService {
         paymentType: 'booking',
         status: 'pending',
       });
+      //send email to user if payment intent created successfully
+      await sendMailer(email!, 'Your payment intent is created', html);
     }
 
     return {

@@ -7,11 +7,14 @@ import { Model } from 'mongoose';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import type { Response } from 'express';
+import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
+import sendMailer from 'src/app/helpers/sendMailer';
 
 @Injectable()
 export class WebhookService {
   private readonly stripe: Stripe = new Stripe(config.stripe.secretKey!);
   private readonly logger = new Logger(WebhookService.name);
+  quoteModel: any;
 
   constructor(
     @InjectModel(Payment.name)
@@ -70,7 +73,17 @@ export class WebhookService {
     // Update payment status
     payment.status = 'completed';
     await payment.save();
+    const booking = await this.bookingModel.findById(payment.bookingId);
+    if (!booking) return;
+    const quote = await this.quoteModel.findOne({ quote: booking.quote });
+    if (!quote) return;
 
+      const html = quoteEmailTemplate(quote);
+      await sendMailer(
+        quote.personalInfo?.email!,
+        'Your payment is successful',
+        html,
+      );
     // Update booking status to confirmed
     await this.bookingModel.findByIdAndUpdate(payment.bookingId, {
       status: 'confirmed',
