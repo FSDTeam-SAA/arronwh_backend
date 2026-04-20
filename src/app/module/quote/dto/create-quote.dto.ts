@@ -23,28 +23,28 @@ export class PersonalInfoDto {
   @IsString()
   title?: string;
 
-  @ApiProperty({ example: 'John' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ example: 'John' })
+  @IsOptional()
   @IsString()
   fastName: string;
 
-  @ApiProperty({ example: 'Doe' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ example: 'Doe' })
+  @IsOptional()
   @IsString()
   sureName: string;
 
-  @ApiProperty({ example: 'john@example.com' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ example: 'john@example.com' })
+  @IsOptional()
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '+8801XXXXXXXXX' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ example: '+8801XXXXXXXXX' })
+  @IsOptional()
   @IsString()
   mobleNumber: string;
 
-  @ApiProperty({ example: '12345' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({ example: '12345' })
+  @IsOptional()
   @IsString()
   postcode: string;
 }
