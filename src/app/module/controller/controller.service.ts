@@ -8,6 +8,8 @@ import {
   BoilerController,
   BoilerControllerDocument,
 } from './entities/controller.entities';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 
 const controllerSearchableFields = ['title'];
 
@@ -16,7 +18,56 @@ export class ControllerService {
   constructor(
     @InjectModel(BoilerController.name)
     private readonly controllerModel: Model<BoilerControllerDocument>,
+    @InjectModel(Quote.name) private readonly quoteModel: Model<QuoteDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
+
+  private async getBookingCountMap(): Promise<Map<string, number>> {
+    const bookingCounts = await this.bookingModel.aggregate([
+      {
+        $lookup: {
+          from: this.quoteModel.collection.name,
+          localField: 'quote',
+          foreignField: '_id',
+          as: 'quoteData',
+        },
+      },
+      { $unwind: '$quoteData' },
+      {
+        $match: {
+          'quoteData.controller': {
+            $exists: true,
+            $ne: null,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$quoteData.controller',
+          bookingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return new Map(
+      bookingCounts.map((item) => [String(item._id), Number(item.bookingCount)]),
+    );
+  }
+
+  private compareValues(a: unknown, b: unknown, sortOrder: string) {
+    const direction = sortOrder === 'asc' ? 1 : -1;
+
+    if (a instanceof Date && b instanceof Date) {
+      return (a.getTime() - b.getTime()) * direction;
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+      return (a - b) * direction;
+    }
+
+    return String(a ?? '').localeCompare(String(b ?? '')) * direction;
+  }
 
   private parseDto(dto: any) {
     if (dto.price !== undefined) dto.price = Number(dto.price);
@@ -124,14 +175,39 @@ export class ControllerService {
       }));
     }
 
-    const total = await this.controllerModel.countDocuments(whereConditions);
-    // console.log('Query Parameters:', { limit, page, skip, sortBy, sortOrder }, 'Search Term:', searchTerm, 'Filter Data:', filterData, 'Total:', total);
+    const [total, controllers, bookingCountMap] = await Promise.all([
+      this.controllerModel.countDocuments(whereConditions),
+      this.controllerModel.find(whereConditions).lean(),
+      this.getBookingCountMap(),
+    ]);
 
-    const data = await this.controllerModel
-      .find(whereConditions)
-      .skip(skip)
-      .limit(limit)
-      .sort({ [sortBy]: sortOrder } as any);
+    const highestBookingCount = controllers.reduce((max, controller) => {
+      const bookingCount = bookingCountMap.get(String(controller._id)) ?? 0;
+      return Math.max(max, bookingCount);
+    }, 0);
+
+    const data = controllers
+      .map((controller) => {
+        const bookingCount = bookingCountMap.get(String(controller._id)) ?? 0;
+        return {
+          ...controller,
+          bookingCount,
+          isBestSeller:
+            highestBookingCount > 0 && bookingCount === highestBookingCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.bookingCount !== a.bookingCount) {
+          return b.bookingCount - a.bookingCount;
+        }
+
+        return this.compareValues(
+          a[sortBy as keyof typeof a],
+          b[sortBy as keyof typeof b],
+          sortOrder,
+        );
+      })
+      .slice(skip, skip + limit);
 
     return {
       meta: { page, limit, total },
