@@ -71,6 +71,9 @@ export class Product {
 
   @Prop({ type: [InstallationGuideItem], _id: false })
   boilerInstallationGuide: InstallationGuideItem[];
+
+  @Prop({default: false})
+  isBestSeller: boolean;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
