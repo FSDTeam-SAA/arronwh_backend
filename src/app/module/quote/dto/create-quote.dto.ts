@@ -61,6 +61,7 @@ export class QuoteQuizAnswerDto {
   @ApiProperty({ example: 100 })
   @IsNumber()
   @Min(0)
+  @IsOptional()
   price: number;
 }
 
