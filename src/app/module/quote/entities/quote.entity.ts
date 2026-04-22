@@ -9,6 +9,9 @@ class QuoteQuizAnswer {
 
   @Prop()
   answer: string;
+
+  @Prop()
+  price: number;
 }
 
 class personalInfo {

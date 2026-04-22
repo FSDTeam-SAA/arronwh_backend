@@ -158,7 +158,7 @@ export class ProductService {
     }));
 
     const payablePrice = payload.price && payload.discountPrice ? payload.price - payload.discountPrice : undefined;
-    const monthlyPrice = payablePrice ? Math.ceil(payablePrice / 12) : undefined;
+    const monthlyPrice = payablePrice ? parseFloat((payablePrice / 12).toFixed(2)) : undefined;
 
     return this.productModel.create({
       user: userId,

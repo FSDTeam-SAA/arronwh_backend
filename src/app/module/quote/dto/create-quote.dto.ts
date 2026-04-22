@@ -57,6 +57,11 @@ export class QuoteQuizAnswerDto {
   @ApiProperty({ example: 'Need boiler installation' })
   @IsString()
   answer: string;
+
+  @ApiProperty({ example: 100 })
+  @IsNumber()
+  @Min(0)
+  price: number;
 }
 
 export class PayMounthlyDataDto {
