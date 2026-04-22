@@ -58,7 +58,7 @@ export class QuoteQuizAnswerDto {
   @IsString()
   answer: string;
 
-  @ApiProperty({ example: 100 })
+  @ApiPropertyOptional({ example: 100 })
   @IsNumber()
   @Min(0)
   @IsOptional()
