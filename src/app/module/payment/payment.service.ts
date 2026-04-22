@@ -28,6 +28,11 @@ export class PaymentService {
   }
 
   async payBooking(bookingId: string) {
+    const stripePublishableKey = config.stripe.publicKey;
+    if (!stripePublishableKey) {
+      throw new HttpException('Stripe publishable key is not configured', 500);
+    }
+
     // 1. Find booking
     const booking = await this.bookingModel.findById(bookingId);
     if (!booking) {
@@ -57,19 +62,34 @@ export class PaymentService {
     });
 
     if (existingPending?.stripePaymentIntentId) {
-      const existingPaymentIntent = await this.stripe.paymentIntents.retrieve(
-        existingPending.stripePaymentIntentId,
-      );
+      try {
+        const existingPaymentIntent = await this.stripe.paymentIntents.retrieve(
+          existingPending.stripePaymentIntentId,
+        );
 
-      if (
-        existingPaymentIntent.status !== 'succeeded' &&
-        existingPaymentIntent.status !== 'canceled'
-      ) {
-        return {
-          clientSecret: existingPaymentIntent.client_secret,
-          paymentIntentId: existingPaymentIntent.id,
-          amount: booking.price,
-        };
+        if (
+          existingPaymentIntent.status !== 'succeeded' &&
+          existingPaymentIntent.status !== 'canceled'
+        ) {
+          return {
+            clientSecret: existingPaymentIntent.client_secret,
+            paymentIntentId: existingPaymentIntent.id,
+            amount: booking.price,
+            publishableKey: stripePublishableKey,
+          };
+        }
+      } catch (error) {
+        const errorCode =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          typeof (error as { code?: unknown }).code === 'string'
+            ? (error as { code?: string }).code
+            : undefined;
+
+        if (errorCode !== 'resource_missing') {
+          throw error;
+        }
       }
     }
 
@@ -114,6 +134,7 @@ export class PaymentService {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
       amount: booking.price,
+      publishableKey: stripePublishableKey,
     };
   }
 

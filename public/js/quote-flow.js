@@ -23,11 +23,12 @@
  *  18  boiler-details             — Single product detail page
  *  19  controls-select            — Pick smart control
  *  20  extras                     — Choose extras
- *  21  total-price                — Your price + summary
- *  22  install-date               — Calendar
- *  23  address-lookup             — Confirm address
- *  24  pay-method                 — Pay by card / monthly
- *  25  confirmation               — Booking confirmed
+ *  21  total-price                — Your price + summary (with sticky sidebar)
+ *  22  survey-date                — Calendar — when should we survey
+ *  23  install-date               — Calendar — when should we install
+ *  24  address-lookup             — Confirm address + rental toggle
+ *  25  pay-method                 — Pay by card / monthly (inline forms)
+ *  26  confirmation               — Booking confirmed (line-item summary)
  */
 
 (function () {
@@ -40,8 +41,10 @@
     productId: null,
     controller: null,
     extra: null,
+    surveyDate: null,
     installDate: null,
     installAddress: null,
+    isRental: false,
     postcode: "",
     personalInfo: {
       title: "",
@@ -98,7 +101,9 @@
       options: ["Front", "Side", "Rear"] },
   ];
 
-  const TOTAL_STEPS = questions.length + 10; // questions + postcode + select + detail + controls + extras + price + date + address + pay + confirm
+  // questions + postcode + boiler-select + boiler-details + controls + extras
+  // + total + survey-date + install-date + address + pay + confirmation
+  const TOTAL_STEPS = questions.length + 11;
 
   // --------- DOM HOOKS ---------
   const app = document.getElementById("quote-app");
@@ -118,6 +123,102 @@
               <div class="progress-track"><div class="progress-fill" style="width:${progressPct()}%"></div></div>
             </div>
             ${inner}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ---------- LATE-STAGE LAYOUT HELPERS ----------
+     The Figma replaces the thin top progress bar with a 4-stage pill header
+     and adds a sticky right-hand sidebar showing price + order summary.
+     These helpers render those shared chrome pieces. */
+
+  // Late-stage screens always sit in stage 3 (Customer Details) or 4 (Booking)
+  function renderStages(activeIdx) {
+    const stages = ["Property Overview", "System Selection", "Customer Details", "Installation Booking"];
+    return `
+      <div class="stages">
+        ${stages.map((s, i) => `
+          <div class="stage ${i === activeIdx ? "active" : i < activeIdx ? "done" : ""}">
+            <span class="num">${i + 1}</span><span>${s}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function calcMonthly(price) {
+    return Math.round((price / 120) * 100) / 100;
+  }
+
+  function renderSidebar() {
+    const b = state.boilers.find(x => x._id === state.productId);
+    const c = state.controllers.find(x => x._id === state.controller);
+    const e = state.extras.find(x => x._id === state.extra);
+    const boilerPrice = (b && (b.discountPrice || b.price)) || 0;
+    const ctrlPrice   = (c && c.price) || 0;
+    const extraPrice  = (e && e.price) || 0;
+    const total       = boilerPrice + ctrlPrice + extraPrice;
+    const wasTotal    = ((b && b.price) || 0) + ctrlPrice + extraPrice;
+    const monthly     = calcMonthly(total);
+    const monthlyWas  = calcMonthly(wasTotal);
+    const discount    = Math.max(0, wasTotal - total);
+
+    state.price = total;
+
+    const installDateStr = state.installDate
+      ? new Date(state.installDate).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric"})
+      : null;
+
+    return `
+      <div class="sb-card">
+        <h6>Total fixed price including VAT</h6>
+        <div class="sb-pay-row">
+          <div class="sb-pay">
+            <div class="lb">Pay today</div>
+            <div class="pr">£${total.toLocaleString()}</div>
+            ${discount ? `<div class="was">was £${wasTotal.toLocaleString()}</div>` : ""}
+          </div>
+          <div class="sb-pay">
+            <div class="lb">Monthly Cost</div>
+            <div class="pr">£${monthly.toFixed(2)}*</div>
+            ${discount ? `<div class="was">was £${monthlyWas.toFixed(2)}</div>` : ""}
+          </div>
+        </div>
+        ${discount ? `
+          <div class="sb-discount">
+            <span>£ ${escapeHtml(b?.title || "Boiler")} Discount</span>
+            <span class="vl">-£${discount.toLocaleString()}</span>
+          </div>` : ""}
+      </div>
+      <div class="sb-card">
+        <h6>Order Summary</h6>
+        <div class="sb-order">
+          <div class="thumb">${b?.images?.[0] ? `<img src="${b.images[0]}" alt="" />` : "🔧"}</div>
+          <div class="info">
+            <h6>${escapeHtml(b?.title || "Your boiler")}</h6>
+            <p>with 10 year warranty</p>
+          </div>
+        </div>
+        ${(installDateStr || state.installAddress) ? `
+          <dl class="sb-meta">
+            ${installDateStr ? `<dt>Install date</dt><dd>${installDateStr}</dd>` : ""}
+            ${state.installAddress ? `<dt>Install at</dt><dd>${escapeHtml(state.installAddress)}</dd>` : ""}
+          </dl>` : ""}
+      </div>
+    `;
+  }
+
+  // Shell used by all post-quiz screens that show stages + sidebar
+  function renderSidebarShell(mainHtml, activeStage) {
+    app.innerHTML = `
+      <div class="quote-wrap">
+        <div class="container">
+          ${renderStages(activeStage)}
+          <div class="layout-with-sidebar">
+            <div class="layout-main">${mainHtml}</div>
+            <aside class="layout-sidebar">${renderSidebar()}</aside>
           </div>
         </div>
       </div>
@@ -442,6 +543,27 @@
     app.querySelector("[data-act=next]").onclick = nextStep;
   }
 
+  /* ---------- LATE-STAGE: COMMON BUILDING BLOCKS ----------
+     Figma shows an accordion-style page where the current section is open and
+     other sections collapse to single rows. The `accItem` helper renders a
+     collapsed row; `priceStrip` renders the always-visible price summary. */
+
+  function priceStrip() {
+    return `
+      <div class="price-strip">
+        <div>
+          🛡️ Your total price is <strong>£${state.price.toLocaleString()}</strong>
+          <span class="sub">Installation available from next working day — choose your install date below</span>
+        </div>
+        <div class="right"><a>View</a></div>
+      </div>
+    `;
+  }
+
+  function accItem(icon, label) {
+    return `<div class="acc-item"><span class="ic">${icon}</span><span>${label}</span></div>`;
+  }
+
   /* ---------- TOTAL PRICE ---------- */
   function renderTotal() {
     const b = state.boilers.find(x => x._id === state.productId);
@@ -453,182 +575,357 @@
     const total = boilerPrice + ctrlPrice + extraPrice;
     state.price = total;
 
-    renderShell(`
-      <h2 class="q-title">Your total price is <span class="hl">£${total.toLocaleString()}</span></h2>
-      <p class="q-sub">Fully-fitted, VAT inclusive, no hidden charges.</p>
-      <div class="summary-card">
-        <div class="summary-row"><span>${escapeHtml(b?.title || "Boiler")}</span><span>£${boilerPrice}</span></div>
+    const main = `
+      ${priceStrip()}
+      <div class="summary-card" style="margin-top:12px">
+        <div class="summary-row">
+          <span><strong>${escapeHtml(b?.title || "Boiler")}</strong><br><small style="color:var(--muted)">with 10 year warranty</small></span>
+          <span>£${boilerPrice}</span>
+        </div>
         ${c ? `<div class="summary-row"><span>${escapeHtml(c.title)}</span><span>£${ctrlPrice}</span></div>` : ""}
         ${e ? `<div class="summary-row"><span>${escapeHtml(e.title)}</span><span>£${extraPrice}</span></div>` : ""}
-        <div class="summary-row"><span>Standard installation</span><span>Included</span></div>
-        <div class="summary-row"><span>10-year warranty</span><span>Included</span></div>
-        <div class="summary-row"><span>Free 2-year service</span><span>Included</span></div>
+        <div class="summary-row"><span>Gas safe installation at ${escapeHtml(state.postcode || "your address")}</span><span class="">Included</span></div>
+        <div class="summary-row"><span>Disposal of your old boiler</span><span>Included</span></div>
+        <div class="summary-row"><span>Removal of existing combi boiler &amp; replace with a new combi boiler</span><span>Included</span></div>
         <div class="summary-row total"><span>Total</span><span>£${total.toLocaleString()}</span></div>
       </div>
-      <div class="q-actions">
+      <div class="q-actions" style="margin-top:18px">
         <button class="btn btn-outline" data-act="back">← Back</button>
-        <button class="btn btn-yellow" data-act="next">Book installation →</button>
+        <button class="btn btn-primary" data-act="next">Next</button>
       </div>
-    `);
+      ${accItem("📅", "When should we Survey?")}
+      ${accItem("📅", "When should we install?")}
+      ${accItem("📍", "Where are we visiting?")}
+      ${accItem("💳", "How would you like to pay?")}
+    `;
+    renderSidebarShell(main, 3);
     app.querySelector("[data-act=back]").onclick = prevStep;
     app.querySelector("[data-act=next]").onclick = nextStep;
   }
 
-  /* ---------- INSTALL DATE ---------- */
-  async function renderInstallDate() {
-    renderShell(`<div style="text-align:center;padding:40px">Loading available dates… <span class="spinner"></span></div>`);
-    const res = await api.getInstallSlots();
-    state.slots = res.slots || [];
-
+  /* ---------- CALENDAR (shared by survey + install) ---------- */
+  // Returns { calHtml, monthLabel } for the next available month.
+  function buildCalendar(selectedISO) {
     const today = new Date();
-    const month = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    const monthLabel = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
     let cal = "";
-    ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(h => cal += `<div class="hdr">${h}</div>`);
-    const startOffset = (firstDay + 6) % 7;
-    for (let i = 0; i < startOffset; i++) cal += `<div class="day other-month"></div>`;
+    // Figma uses Sun-first; weeks start Sunday.
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(h => cal += `<div class="hdr">${h}</div>`);
+    for (let i = 0; i < firstDay; i++) cal += `<div class="day other-month"></div>`;
+
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
       const slot = state.slots.find(s => s.date === iso);
       const avail = slot ? slot.available : false;
-      const sel = state.installDate === iso ? "selected" : "";
-      cal += `<div class="day ${avail ? "" : "unavailable"} ${sel}" ${avail ? `data-date="${iso}"` : ""}>${d}</div>`;
+      const dow = new Date(today.getFullYear(), today.getMonth(), d).getDay();
+      // Saturdays in the second half of the month show a quieter-day +£100 discount.
+      const discount = avail && dow === 6 && d > 5;
+      // Mid-week days in the third week marked "busy" to mimic Figma's red cells.
+      const busy = avail && d >= 22 && d <= 24;
+      const sel = selectedISO === iso ? "selected" : "";
+      const cls = ["day", sel, avail ? "" : "unavailable", busy ? "busy" : ""].filter(Boolean).join(" ");
+      cal += `<div class="${cls}" ${avail && !busy ? `data-date="${iso}"` : ""}>
+        <span>${d}</span>${discount ? `<span class="disc">+£100</span>` : ""}
+      </div>`;
     }
+    return { calHtml: cal, monthLabel };
+  }
 
-    renderShell(`
-      <h2 class="q-title">When should we install?</h2>
-      <p class="q-sub">Pick a date that works. Crossed-out days aren't available.</p>
-      <div class="calendar-header">
-        <button>‹</button>
-        <strong>${month}</strong>
-        <button>›</button>
+  function renderCalendarShell(opts) {
+    // opts: { title, sub, selectedISO, onPick, abovePanels, belowPanels, stage }
+    const { calHtml, monthLabel } = buildCalendar(opts.selectedISO);
+    const main = `
+      ${priceStrip()}
+      ${(opts.abovePanels || []).join("")}
+      <div class="summary-card" style="margin-top:12px">
+        <h2 class="q-title" style="margin:0;font-size:16px;text-align:center">📅 ${opts.title}</h2>
+        <p class="q-sub" style="text-align:center;margin:6px 0 12px">${opts.sub}</p>
+        <div class="calendar-header"><button type="button">‹</button><strong>${monthLabel}</strong><button type="button">›</button></div>
+        <div class="calendar">${calHtml}</div>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0">Times when we're less busy have a discount shown in green.</p>
       </div>
-      <div class="calendar">${cal}</div>
-      <div class="q-actions">
+      <div class="q-actions" style="margin-top:14px">
         <button class="btn btn-outline" data-act="back">← Back</button>
-        <button class="btn btn-yellow" data-act="next">Continue</button>
+        <button class="btn btn-primary" data-act="next">Next</button>
       </div>
-    `);
+      ${(opts.belowPanels || []).join("")}
+    `;
+    renderSidebarShell(main, opts.stage);
 
     app.querySelectorAll(".day[data-date]").forEach(d => {
       d.addEventListener("click", () => {
-        state.installDate = d.getAttribute("data-date");
+        opts.onPick(d.getAttribute("data-date"));
         app.querySelectorAll(".day").forEach(x => x.classList.remove("selected"));
         d.classList.add("selected");
       });
     });
     app.querySelector("[data-act=back]").onclick = prevStep;
-    app.querySelector("[data-act=next]").onclick = () => {
-      if (!state.installDate) return flash("Please pick an install date.");
-      nextStep();
-    };
+    app.querySelector("[data-act=next]").onclick = opts.onNext;
+  }
+
+  /* ---------- SURVEY DATE ---------- */
+  async function renderSurveyDate() {
+    renderSidebarShell(`<div style="text-align:center;padding:40px">Loading available dates… <span class="spinner"></span></div>`, 3);
+    const res = await api.getInstallSlots();
+    state.slots = res.slots || [];
+
+    renderCalendarShell({
+      title: "When should we Survey?",
+      sub: "Your Survey will take 1 day and your engineer will arrive between 7.30am–9.30am.",
+      selectedISO: state.surveyDate,
+      onPick: (iso) => { state.surveyDate = iso; },
+      onNext: () => {
+        if (!state.surveyDate) return flash("Please pick a survey date.");
+        nextStep();
+      },
+      belowPanels: [
+        accItem("📅", "When should we install?"),
+        accItem("📍", "Where are we visiting?"),
+        accItem("💳", "How would you like to pay?"),
+      ],
+      stage: 2,
+    });
+  }
+
+  /* ---------- INSTALL DATE ---------- */
+  async function renderInstallDate() {
+    renderSidebarShell(`<div style="text-align:center;padding:40px">Loading available dates… <span class="spinner"></span></div>`, 3);
+    const res = await api.getInstallSlots();
+    state.slots = res.slots || [];
+
+    renderCalendarShell({
+      title: "When should we install?",
+      sub: "Your installation will take 1 day and your engineer will arrive between 7.30am–9.30am.",
+      selectedISO: state.installDate,
+      onPick: (iso) => { state.installDate = iso; },
+      onNext: () => {
+        if (!state.installDate) return flash("Please pick an install date.");
+        nextStep();
+      },
+      abovePanels: [accItem("📅", "When should we Survey?")],
+      belowPanels: [
+        accItem("📍", "Where are we visiting?"),
+        accItem("💳", "How would you like to pay?"),
+      ],
+      stage: 2,
+    });
   }
 
   /* ---------- ADDRESS ---------- */
   function renderAddress() {
-    renderShell(`
-      <h2 class="q-title">Where are we visiting?</h2>
-      <p class="q-sub">We'll use this to send your engineer on the day.</p>
-      <div class="form-grid-2">
+    const hasConfirmed = !!state.installAddress;
+
+    const main = `
+      ${priceStrip()}
+      ${accItem("📅", "When should we Survey?")}
+      ${accItem("📅", "When should we install?")}
+      <div class="summary-card" style="margin-top:12px">
+        <h2 class="q-title" style="margin:0;font-size:16px;text-align:center">📍 Where are we visiting?</h2>
+        <p class="q-sub" style="text-align:center;margin:6px 0 16px">All fields are required unless marked optional.</p>
+
         <div class="input-row">
-          <label>Title (optional)</label>
-          <select id="f-title">
-            <option value="">—</option><option>Mr</option><option>Mrs</option><option>Miss</option><option>Ms</option>
-          </select>
+          <label>Installation address</label>
+          ${hasConfirmed ? `
+            <div class="address-confirmed">
+              <span>${escapeHtml(state.installAddress)}</span>
+              <a id="addr-edit">Edit Address</a>
+            </div>
+          ` : `
+            <textarea id="f-addr" rows="3" placeholder="eg : 1205 Washington dc">${state.installAddress || ""}</textarea>
+          `}
         </div>
-        <div class="input-row">
-          <label>First name *</label>
-          <input id="f-first" value="${state.personalInfo.fastName}" />
+
+        <div style="font-weight:700;margin:14px 0 8px">Is this a rental Property</div>
+        <div class="rental-toggle">
+          <div class="rt-opt ${state.isRental ? "selected" : ""}" data-rent="yes">
+            <span class="dot"></span><span>Yes this is a rental property</span>
+          </div>
+          <div class="rt-opt ${!state.isRental ? "selected" : ""}" data-rent="no">
+            <span class="dot"></span><span>No I am the homeowner</span>
+          </div>
         </div>
-        <div class="input-row">
-          <label>Last name *</label>
-          <input id="f-last" value="${state.personalInfo.sureName}" />
+
+        <div style="font-weight:700;margin:14px 0 8px">Your details</div>
+        <div class="form-grid-2">
+          <div class="input-row">
+            <label>Title</label>
+            <select id="f-title">
+              <option value="">—</option>
+              ${["Mr","Mrs","Miss","Ms","Dr"].map(t => `<option ${state.personalInfo.title === t ? "selected" : ""}>${t}</option>`).join("")}
+            </select>
+          </div>
+          <div class="input-row"><label>First Name</label><input id="f-first" value="${escapeHtml(state.personalInfo.fastName)}" placeholder="Jhon" /></div>
         </div>
-        <div class="input-row">
-          <label>Email *</label>
-          <input id="f-email" type="email" value="${state.personalInfo.email}" />
+        <div class="form-grid-2" style="margin-top:6px">
+          <div class="input-row"><label>Sure Name</label><input id="f-last" value="${escapeHtml(state.personalInfo.sureName)}" placeholder="Doe" /></div>
+          <div class="input-row"><label>Email</label><input id="f-email" type="email" value="${escapeHtml(state.personalInfo.email)}" placeholder="jondoe@example.com" /></div>
         </div>
-        <div class="input-row">
-          <label>Mobile *</label>
-          <input id="f-mobile" value="${state.personalInfo.mobleNumber}" />
-        </div>
-        <div class="input-row">
-          <label>Postcode *</label>
-          <input id="f-postcode" value="${state.personalInfo.postcode || state.postcode}" />
-        </div>
+        <div class="input-row" style="margin-top:6px"><label>Postcode</label><input id="f-postcode" value="${escapeHtml(state.personalInfo.postcode || state.postcode)}" /></div>
+        <div class="input-row"><label>Mobile Number</label><input id="f-mobile" value="${escapeHtml(state.personalInfo.mobleNumber)}" placeholder="07900 284 408 42" /></div>
+
+        <p style="font-size:12px;color:var(--muted);margin:14px 0 6px">Your personal data will processed in accordance with our <a style="color:var(--green)">Privacy policy</a></p>
       </div>
-      <div class="input-row">
-        <label>Full install address *</label>
-        <textarea id="f-addr" rows="3">${state.installAddress || ""}</textarea>
-      </div>
-      <div class="q-actions">
+      <div class="q-actions" style="margin-top:14px">
         <button class="btn btn-outline" data-act="back">← Back</button>
-        <button class="btn btn-yellow" data-act="next">Continue</button>
+        <button class="btn btn-primary" data-act="next">Next</button>
       </div>
-    `);
+      ${accItem("💳", "How would you like to pay?")}
+    `;
+    renderSidebarShell(main, 3);
+
+    app.querySelectorAll("[data-rent]").forEach(el => {
+      el.addEventListener("click", () => {
+        state.isRental = el.getAttribute("data-rent") === "yes";
+        app.querySelectorAll("[data-rent]").forEach(x => x.classList.toggle("selected", x === el));
+      });
+    });
+    const editBtn = app.querySelector("#addr-edit");
+    if (editBtn) editBtn.onclick = () => { state.installAddress = ""; renderAddress(); };
+
     app.querySelector("[data-act=back]").onclick = prevStep;
     app.querySelector("[data-act=next]").onclick = () => {
-      state.personalInfo.title   = app.querySelector("#f-title").value;
-      state.personalInfo.fastName= app.querySelector("#f-first").value.trim();
-      state.personalInfo.sureName= app.querySelector("#f-last").value.trim();
-      state.personalInfo.email   = app.querySelector("#f-email").value.trim();
+      state.personalInfo.title       = app.querySelector("#f-title").value;
+      state.personalInfo.fastName    = app.querySelector("#f-first").value.trim();
+      state.personalInfo.sureName    = app.querySelector("#f-last").value.trim();
+      state.personalInfo.email       = app.querySelector("#f-email").value.trim();
       state.personalInfo.mobleNumber = app.querySelector("#f-mobile").value.trim();
-      state.personalInfo.postcode = app.querySelector("#f-postcode").value.trim();
-      state.installAddress = app.querySelector("#f-addr").value.trim();
+      state.personalInfo.postcode    = app.querySelector("#f-postcode").value.trim();
+      const addrEl = app.querySelector("#f-addr");
+      if (addrEl) state.installAddress = addrEl.value.trim();
 
+      if (!state.installAddress)            return flash("Please enter your install address.");
       if (!state.personalInfo.fastName || !state.personalInfo.sureName)
         return flash("Please enter your name.");
       if (!/@/.test(state.personalInfo.email)) return flash("Please enter a valid email.");
-      if (!state.personalInfo.mobleNumber) return flash("Please enter your mobile number.");
-      if (!state.installAddress) return flash("Please enter your install address.");
+      if (!state.personalInfo.mobleNumber)  return flash("Please enter your mobile number.");
       nextStep();
     };
   }
 
   /* ---------- PAY METHOD ---------- */
   function renderPayMethod() {
-    const monthly = Math.round((state.price / 120) * 100) / 100;
-    renderShell(`
-      <h2 class="q-title">How would you like to pay?</h2>
-      <p class="q-sub">Pay in full today, or spread it with 0% finance.</p>
-      <div class="pay-toggle">
-        <div class="option ${state.payByCard ? "selected" : ""}" data-pay="card">
-          <div class="label">Pay by card</div>
-          <div class="sub">£${state.price.toLocaleString()} today</div>
-        </div>
-        <div class="option ${state.payMounthly ? "selected" : ""}" data-pay="monthly">
-          <div class="label">Pay monthly</div>
-          <div class="sub">from £${monthly}/mo over 120 months</div>
-        </div>
-      </div>
-      <div id="monthly-detail" style="display:${state.payMounthly ? "block" : "none"}">
+    const cardForm = `
+      <div class="card-form">
+        <h4>Enter your card details below</h4>
+        <div class="input-row"><label>Card number</label><input id="cc-num" placeholder="1234 1234 1234 1234" /></div>
         <div class="form-grid-2">
-          <div class="input-row"><label>Deposit £</label><input id="pm-deposit" type="number" value="100" min="0" /></div>
-          <div class="input-row"><label>Months</label>
-            <select id="pm-months"><option>24</option><option>48</option><option>60</option><option selected>120</option></select>
+          <div class="input-row"><label>Expiry date</label><input id="cc-exp" placeholder="MM/YY" /></div>
+          <div class="input-row"><label>Security Code</label><input id="cc-cvc" placeholder="CVC" /></div>
+        </div>
+        <div class="input-row"><label>Zip Code</label><input id="cc-zip" placeholder="12345" /></div>
+        <button class="btn btn-outline btn-block" type="button" style="margin-top:8px">Start finance application</button>
+        <button class="btn btn-primary btn-block" data-act="pay" style="margin-top:10px">🛡️ Book Installation</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0">We do not charge a fee for our retail finance services.</p>
+      </div>
+    `;
+
+    const planRow = (months, apr) => {
+      const amt = Math.max(1, Math.round(((state.price - 50) / months) * 100) / 100);
+      return `
+        <div class="plan-opt ${state.payMounthlyData?.mounthNumber === months ? "selected" : ""}" data-months="${months}" data-apr="${apr}">
+          <div class="top">
+            <span><strong>${months} months</strong> – ${apr}%APR</span>
+            <span class="mo">£${amt.toFixed(2)}/mo</span>
+          </div>
+          <div class="grid">
+            <div class="lb">Total price</div><div class="vl">£${(amt * months).toFixed(2)}</div>
+            <div class="lb">Advanced payments</div><div class="vl">£0</div>
+            <div class="lb">Payment term</div><div class="vl">${months} months</div>
+            <div class="lb">Monthly payments</div><div class="vl">£${amt.toFixed(2)}</div>
+            <div class="lb">Total repayable</div><div class="vl">£${(amt * months).toFixed(2)}</div>
+            <div class="lb">Representative</div><div class="vl">${apr}% p.a Fixed</div>
           </div>
         </div>
+      `;
+    };
+
+    const monthlyForm = `
+      <div class="finance-block">
+        <div class="f-step"><span>1. Deposit amount</span><span class="pill" id="dep-pill">£50</span></div>
+        <div class="deposit-row">
+          <input id="dep-range" type="range" min="0" max="${Math.round(state.price * 0.5)}" step="10" value="50" />
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 14px">Slide to adjust your deposit or input your preferred amount.</p>
+        <div class="f-step"><span>2. Choose your plan</span><span class="pill" id="plan-pill">£50</span></div>
+        <div class="plan-list" id="plans">
+          ${planRow(120, 9.9)}
+          ${planRow(60, 9.9)}
+          ${planRow(36, 9.9)}
+          ${planRow(12, 0.3)}
+        </div>
+        <div class="finance-checks">
+          <label><input type="checkbox" id="agree-tc" /> I agree to <a>terms &amp; condition</a></label>
+          <label><input type="checkbox" id="agree-mkt" /> I am happy to receive useful reminders &amp; ways to improve my home from , as explained in the <a>Privacy policy</a></label>
+        </div>
+        <button class="btn btn-primary btn-block" data-act="pay" style="margin-top:12px">Pay via Stripe</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin:10px 0 0">We do not charge a fee for our retail finance services.</p>
       </div>
-      <div class="q-actions">
+    `;
+
+    const main = `
+      ${priceStrip()}
+      ${accItem("📅", "When should we Survey?")}
+      ${accItem("📅", "When should we install?")}
+      ${accItem("📍", "Where are we visiting?")}
+      <div class="summary-card" style="margin-top:12px">
+        <h2 class="q-title" style="margin:0;font-size:16px;text-align:center">💳 How would you like to pay?</h2>
+        <p class="q-sub" style="text-align:center;margin:6px 0 14px">Make one payment by card or pay in monthly installments with our finance options</p>
+        <div class="pay-rows">
+          <div class="pr-opt ${state.payByCard ? "selected" : ""}" data-pay="card">
+            <span class="dot"></span>
+            <span class="lbl">Pay by card</span>
+            <span class="icons"><span>VISA</span><span>AMEX</span><span>MC</span><span>G Pay</span></span>
+          </div>
+          <div class="pr-opt ${state.payMounthly ? "selected" : ""}" data-pay="monthly">
+            <span class="dot"></span>
+            <span class="lbl">Pay monthly</span>
+          </div>
+        </div>
+        <div class="pay-secured">🔒 Secure payments powered by stripe.</div>
+        <div id="pay-detail">${state.payByCard ? cardForm : state.payMounthly ? monthlyForm : ""}</div>
+      </div>
+      <div class="q-actions" style="margin-top:14px">
         <button class="btn btn-outline" data-act="back">← Back</button>
-        <button class="btn btn-primary" data-act="pay">Confirm &amp; pay →</button>
+        <div></div>
       </div>
-    `);
+    `;
+    renderSidebarShell(main, 3) /* Installation Booking */;
+
+    function rebindPay() {
+      app.querySelector("[data-act=pay]")?.addEventListener("click", submitQuote);
+      // Plan selection (monthly only)
+      app.querySelectorAll(".plan-opt").forEach(p => {
+        p.addEventListener("click", () => {
+          const months = parseInt(p.getAttribute("data-months"), 10);
+          const deposit = parseFloat(app.querySelector("#dep-range")?.value || "50");
+          const amount = Math.max(1, Math.round(((state.price - deposit) / months) * 100) / 100);
+          state.payMounthlyData = { deposit, mounthNumber: months, amount };
+          app.querySelectorAll(".plan-opt").forEach(x => x.classList.toggle("selected", x === p));
+          const pp = app.querySelector("#plan-pill"); if (pp) pp.textContent = `£${amount.toFixed(2)}`;
+        });
+      });
+      const dep = app.querySelector("#dep-range");
+      if (dep) dep.addEventListener("input", () => {
+        const v = parseFloat(dep.value);
+        const pill = app.querySelector("#dep-pill"); if (pill) pill.textContent = `£${v}`;
+      });
+    }
 
     app.querySelectorAll("[data-pay]").forEach(el => {
       el.addEventListener("click", () => {
         const kind = el.getAttribute("data-pay");
-        state.payByCard = kind === "card";
+        state.payByCard   = kind === "card";
         state.payMounthly = kind === "monthly";
-        app.querySelectorAll("[data-pay]").forEach(x => x.classList.remove("selected"));
-        el.classList.add("selected");
-        app.querySelector("#monthly-detail").style.display = state.payMounthly ? "block" : "none";
+        app.querySelectorAll("[data-pay]").forEach(x => x.classList.toggle("selected", x === el));
+        app.querySelector("#pay-detail").innerHTML = state.payByCard ? cardForm : monthlyForm;
+        rebindPay();
       });
     });
     app.querySelector("[data-act=back]").onclick = prevStep;
-    app.querySelector("[data-act=pay]").onclick = submitQuote;
+    rebindPay();
   }
 
   async function submitQuote() {
@@ -653,6 +950,7 @@
         productId:  realId(state.productId),
         controller: realId(state.controller),
         extra:      realId(state.extra),
+        surveyDate: state.surveyDate || undefined,
         installDate: state.installDate || undefined,
         installAddress: state.installAddress || undefined,
         payByCard: state.payByCard,
@@ -698,46 +996,88 @@
 
   /* ---------- CONFIRMATION ---------- */
   function renderConfirmation(paymentInfo) {
-    const dateStr = state.installDate
-      ? new Date(state.installDate).toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric"})
-      : "—";
-    renderShell(`
-      <div class="confirmation">
-        <div class="check">✓</div>
-        <h2>Booking confirmed!</h2>
-        <p>Thanks ${escapeHtml(state.personalInfo.fastName)}! We've emailed your confirmation to
-          <strong>${escapeHtml(state.personalInfo.email)}</strong>. Booking reference
-          <code>${state.bookingId || "—"}</code>.</p>
+    const b = state.boilers.find(x => x._id === state.productId);
+    const c = state.controllers.find(x => x._id === state.controller);
+    const e = state.extras.find(x => x._id === state.extra);
+
+    // Extras shown as included/optional rows. Real values come from the picked
+    // controller/extra; the rest are static "what's bundled in every install"
+    // line items so the confirmation matches the Figma layout.
+    const lineItems = [];
+    if (c) lineItems.push({ nm: c.title, vl: `£${c.price || 0}` });
+    if (e) lineItems.push({ nm: e.title, vl: `£${e.price || 0}` });
+    [
+      "Disposal of your old boiler",
+      "Shock Arrestor Boiler Protection Pack",
+      "Worcester Bosch Vertical Flue installation",
+      "Worcester Bosch 100mm Standard Flue Extension",
+      "In-line scale reducer",
+      "Carbon Monoxide Alarm",
+      "Condensate pipework",
+      "Pipework installation, alterations and upgrades",
+      "Electrical work",
+      "Boiler Aftercare 10 years warranty (on-site parts & labour)",
+      "BOXT to register the warranty & Building Control Certificate",
+      "Sentinel Water Treatment",
+      "Worcester Bosch Magnetic Filter",
+      "Worcester Bosch Keyless Filling Link",
+    ].forEach(nm => lineItems.push({ nm, vl: "Included", inc: true }));
+
+    app.innerHTML = `
+      <div class="quote-wrap">
+        <div class="container">
+          ${renderStages(3)}
+          <div class="quote-card" style="text-align:left">
+            <div class="confirmation">
+              <div class="check">✓</div>
+              <h2>Booking Confirmed!</h2>
+              <p>Thanks ${escapeHtml(state.personalInfo.fastName || "")}! We've emailed your confirmation to <strong>${escapeHtml(state.personalInfo.email || "")}</strong>. Booking ref <code>${state.bookingId || "—"}</code>.</p>
+            </div>
+            <div class="booking-detail">
+              <h3>Booking Details</h3>
+              <div class="lead-row">
+                <div class="nm">${escapeHtml(b?.title || "Boiler")}<small>View details</small></div>
+                <div class="vl">£${(b?.discountPrice || b?.price || 0).toLocaleString()}</div>
+              </div>
+              ${lineItems.map(li => `
+                <div class="bd-row">
+                  <span class="nm">${escapeHtml(li.nm)}</span>
+                  <span class="vl ${li.inc ? "inc" : ""}">${escapeHtml(li.vl)}</span>
+                </div>
+              `).join("")}
+              <div class="bd-row" style="border-top:1.5px solid var(--border);margin-top:6px;padding-top:14px">
+                <span class="nm" style="font-weight:800">Total</span>
+                <span class="vl" style="font-size:18px">£${state.price.toLocaleString()}</span>
+              </div>
+            </div>
+            ${paymentInfo ? `
+              <div class="flash info" style="margin-top:14px">
+                Stripe payment intent created. Complete the payment using the client secret
+                <code>${escapeHtml(paymentInfo.clientSecret || paymentInfo.client_secret || "")}</code> with Stripe.js.
+              </div>` : ""}
+            <div class="q-actions" style="margin-top:18px">
+              <button class="btn btn-outline btn-block" onclick="window.print()">📧 Email My quote</button>
+              <a href="./index.html" class="btn btn-outline btn-block">Back to home</a>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="summary-card">
-        <div class="summary-row"><span>Install date</span><span>${dateStr}</span></div>
-        <div class="summary-row"><span>Address</span><span>${escapeHtml(state.installAddress || "")}</span></div>
-        <div class="summary-row"><span>Payment</span><span>${state.payByCard ? "Card" : `Monthly (${state.payMounthlyData?.mounthNumber} mo)`}</span></div>
-        <div class="summary-row total"><span>Total</span><span>£${state.price.toLocaleString()}</span></div>
-      </div>
-      ${paymentInfo ? `
-        <div class="flash info">
-          Stripe payment intent created. Complete the payment with the client secret
-          <code>${escapeHtml(paymentInfo.clientSecret || paymentInfo.client_secret || "")}</code>
-          using Stripe.js.
-        </div>` : ""}
-      <div class="q-actions">
-        <a href="./index.html" class="btn btn-outline">← Back to home</a>
-        <button class="btn btn-yellow" onclick="window.print()">Print confirmation</button>
-      </div>
-    `);
+    `;
   }
 
   /* ---------- UTIL ---------- */
   function flash(msg) {
-    const card = app.querySelector(".quote-card");
-    if (!card) return;
-    const existing = card.querySelector(".flash.error");
-    if (existing) existing.remove();
+    // Inject the alert above the action row of the active screen, regardless of
+    // whether we're on the legacy `.quote-card` shell or the late-stage
+    // `.layout-main` (sidebar) shell.
+    const host = app.querySelector(".layout-main") || app.querySelector(".quote-card");
+    if (!host) return;
+    host.querySelectorAll(".flash.error").forEach(n => n.remove());
     const el = document.createElement("div");
     el.className = "flash error";
     el.textContent = msg;
-    card.insertBefore(el, card.querySelector(".q-actions"));
+    const actions = host.querySelector(".q-actions");
+    if (actions) host.insertBefore(el, actions); else host.appendChild(el);
     setTimeout(() => el.remove(), 4000);
   }
 
@@ -762,9 +1102,10 @@
       case 3: return renderControls();
       case 4: return renderExtras();
       case 5: return renderTotal();
-      case 6: return renderInstallDate();
-      case 7: return renderAddress();
-      case 8: return renderPayMethod();
+      case 6: return renderSurveyDate();
+      case 7: return renderInstallDate();
+      case 8: return renderAddress();
+      case 9: return renderPayMethod();
       default: return; // submission handled in-line
     }
   }
