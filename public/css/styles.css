@@ -370,3 +370,224 @@ section.block h2 { font-size: 28px; margin: 0 0 28px; font-weight: 800; text-ali
   .hero h1 { font-size: 26px; }
   .quote-card { padding: 18px; }
 }
+
+/* =========================================================
+   LATE-STAGE FIGMA LAYOUT (price → schedule → address → pay)
+   2-column layout with sticky right sidebar
+   ========================================================= */
+
+.layout-with-sidebar {
+  display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start;
+}
+.layout-main { min-width: 0; }
+.layout-sidebar { position: sticky; top: 96px; }
+
+/* Top 4-stage progress (Property Overview / System Selection / Customer Details / Installation Booking) */
+.stages {
+  display: flex; align-items: center; gap: 4px;
+  background: #fff; border: 1px solid var(--border); border-radius: 999px;
+  padding: 6px; margin-bottom: 18px;
+}
+.stages .stage {
+  flex: 1; padding: 10px 14px; font-size: 13px; font-weight: 600;
+  color: var(--muted); display: flex; align-items: center; gap: 8px;
+  border-radius: 999px; white-space: nowrap; justify-content: center;
+}
+.stages .stage.active { background: var(--yellow); color: #111; font-weight: 700; }
+.stages .stage.done { color: var(--text); }
+.stages .stage .num {
+  width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.08);
+  display: grid; place-items: center; font-size: 12px; font-weight: 800;
+}
+.stages .stage.active .num { background: rgba(0,0,0,.15); }
+
+/* Accordion summary rows (sections collapsed below the current open one) */
+.acc-item {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; margin-top: 10px;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-weight: 600; cursor: default;
+}
+.acc-item .ic { color: var(--muted); }
+
+/* Price highlight strip used on the Total / accordion screens */
+.price-strip {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+  font-size: 15px; font-weight: 700;
+}
+.price-strip .right a { color: var(--green); font-weight: 700; cursor: pointer; }
+.price-strip .sub { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+/* Right sidebar */
+.sb-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 14px;
+}
+.sb-card h6 {
+  margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #555;
+  text-transform: none; letter-spacing: 0;
+}
+.sb-pay-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sb-pay .lb { font-size: 12px; color: var(--muted); }
+.sb-pay .pr { font-size: 20px; font-weight: 800; color: var(--text); margin: 4px 0 2px; }
+.sb-pay .was { font-size: 11px; color: var(--green); }
+.sb-discount {
+  background: #F3F4F6; border-radius: 8px; padding: 10px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; font-weight: 600; margin-top: 12px;
+}
+.sb-discount .vl { color: var(--green); font-weight: 800; }
+.sb-order { display: flex; gap: 12px; align-items: flex-start; }
+.sb-order .thumb {
+  width: 60px; height: 60px; background: #F7F8FA; border-radius: 8px;
+  display: grid; place-items: center; font-size: 22px; flex-shrink: 0; overflow: hidden;
+}
+.sb-order .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sb-order .info h6 {
+  margin: 0 0 4px; font-size: 14px; font-weight: 800; color: var(--text);
+  text-transform: none; letter-spacing: 0;
+}
+.sb-order .info p { margin: 0; font-size: 12px; color: var(--muted); }
+.sb-meta {
+  display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;
+  padding-top: 12px; margin-top: 12px;
+  border-top: 1px solid var(--border); font-size: 12px;
+}
+.sb-meta dt { color: var(--muted); font-weight: 600; }
+.sb-meta dd { margin: 0; color: var(--text); font-weight: 600; }
+
+/* Calendar — discount day pricing & busy days (override base) */
+.calendar .day {
+  position: relative; min-height: 60px; padding: 8px 4px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.calendar .day .disc { font-size: 10px; color: var(--green); font-weight: 700; }
+.calendar .day.busy { background: #FEE2E2; color: #B91C1C; }
+.calendar .day.busy:hover { border-color: #B91C1C; }
+
+/* Rental property toggle */
+.rental-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.rental-toggle .rt-opt {
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 14px;
+  display: flex; gap: 10px; align-items: center; cursor: pointer;
+  transition: border-color .15s;
+}
+.rental-toggle .rt-opt:hover { border-color: var(--green); }
+.rental-toggle .rt-opt.selected { border-color: var(--green); background: var(--green-soft); }
+.rental-toggle .rt-opt .dot {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.rental-toggle .rt-opt.selected .dot { border-color: var(--green); }
+.rental-toggle .rt-opt.selected .dot::after {
+  content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+}
+.address-confirmed {
+  background: #F7F8FA; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+  font-size: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.address-confirmed a { color: var(--yellow-dark); font-weight: 700; cursor: pointer; }
+
+/* Pay method rows (Figma uses single-col stacked rows) */
+.pay-rows { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+.pay-rows .pr-opt {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer;
+  transition: border-color .15s;
+}
+.pay-rows .pr-opt:hover { border-color: var(--green); }
+.pay-rows .pr-opt.selected { border-color: var(--green); background: var(--green-soft); }
+.pay-rows .pr-opt .dot {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border);
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.pay-rows .pr-opt.selected .dot { border-color: var(--green); }
+.pay-rows .pr-opt.selected .dot::after {
+  content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+}
+.pay-rows .pr-opt .lbl { font-weight: 700; flex: 1; }
+.pay-rows .pr-opt .icons {
+  display: flex; gap: 6px; font-size: 11px; color: var(--muted); font-weight: 700;
+}
+.pay-rows .pr-opt .icons span {
+  background: #F7F8FA; padding: 3px 6px; border-radius: 4px;
+}
+.pay-secured {
+  background: #F7F8FA; border-radius: 8px; padding: 10px;
+  text-align: center; font-size: 12px; color: var(--muted); margin: 8px 0 14px;
+}
+
+/* Inline card form */
+.card-form {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px; margin-top: 14px;
+}
+.card-form h4 { text-align: center; margin: 0 0 16px; font-size: 16px; font-weight: 800; }
+.card-form .input-row { margin: 12px 0; }
+
+/* Monthly finance plan */
+.finance-block {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px; margin-top: 14px;
+}
+.finance-block .f-step {
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; margin-bottom: 12px;
+}
+.finance-block .f-step .pill {
+  background: #F7F8FA; border-radius: 6px; padding: 6px 12px; font-weight: 700;
+  min-width: 60px; text-align: center;
+}
+.deposit-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.deposit-row input[type=range] { flex: 1; }
+.deposit-row .val {
+  background: #F7F8FA; border-radius: 6px; padding: 6px 12px;
+  font-weight: 700; min-width: 60px; text-align: center;
+}
+.plan-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.plan-opt { border: 1.5px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; transition: border-color .15s; }
+.plan-opt:hover { border-color: var(--green); }
+.plan-opt.selected { border-color: var(--green); background: var(--green-soft); }
+.plan-opt .top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+.plan-opt .top .mo { color: var(--green); font-size: 14px; }
+.plan-opt .grid {
+  display: none; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 12px;
+  font-size: 13px;
+}
+.plan-opt.selected .grid { display: grid; }
+.plan-opt .grid .lb { color: var(--muted); }
+.plan-opt .grid .vl { color: var(--text); font-weight: 700; text-align: right; }
+.finance-checks { margin: 14px 0 6px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.finance-checks label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.finance-checks a { color: var(--green); font-weight: 600; }
+
+/* Confirmation booking detail */
+.booking-detail {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 22px; margin-top: 18px;
+}
+.booking-detail h3 { margin: 0 0 4px; font-size: 18px; font-weight: 800; }
+.booking-detail .lead-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+}
+.booking-detail .lead-row .nm { font-weight: 700; }
+.booking-detail .lead-row .nm small { display: block; color: var(--yellow-dark); font-weight: 600; margin-top: 4px; cursor: pointer; }
+.booking-detail .lead-row .vl { font-weight: 800; font-size: 18px; }
+.bd-row {
+  display: flex; justify-content: space-between; padding: 10px 0;
+  border-bottom: 1px dashed var(--border); font-size: 14px;
+}
+.bd-row:last-child { border-bottom: none; }
+.bd-row .nm { color: var(--text); }
+.bd-row .vl { font-weight: 700; }
+.bd-row .vl.inc { color: var(--muted); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .layout-with-sidebar { grid-template-columns: 1fr; }
+  .layout-sidebar { position: static; }
+  .stages .stage { font-size: 11px; padding: 8px; }
+  .stages .stage .num { width: 18px; height: 18px; font-size: 10px; }
+  .rental-toggle { grid-template-columns: 1fr; }
+}
