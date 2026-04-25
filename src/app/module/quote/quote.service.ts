@@ -201,7 +201,7 @@ export class QuoteService {
     };
   }
 
-  async emailQuote(quoteId: string) {
+  async emailQuote(quoteId: string, price?: number, url?: string) {
     const quote = await this.quoteModel
       .findById(quoteId)
       .populate('productId', 'title price payablePrice monthlyPrice')
@@ -212,9 +212,10 @@ export class QuoteService {
     if (!quote) throw new HttpException('Quote not found', 404);
 
     const email = quote.personalInfo?.email;
-    if (!email) throw new HttpException('No email address found on this quote', 400);
+    if (!email)
+      throw new HttpException('No email address found on this quote', 400);
 
-    const html = quoteEmailTemplate(quote);
+    const html = quoteEmailTemplate(quote, price, url);
 
     await sendMailer(email, 'Your Quote Summary', html);
 
