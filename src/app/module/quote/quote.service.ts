@@ -201,7 +201,36 @@ export class QuoteService {
     };
   }
 
-  async emailQuote(quoteId: string, price?: number, url?: string) {
+  private parsePrice(price?: number | string): number | undefined {
+    if (typeof price === 'number') {
+      return Number.isFinite(price) ? price : undefined;
+    }
+
+    if (typeof price === 'string') {
+      const cleaned = price.trim().replace(/[^0-9.-]/g, '');
+      if (!cleaned) return undefined;
+
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    return undefined;
+  }
+
+  private parseUrl(url?: string): string | undefined {
+    if (typeof url !== 'string') return undefined;
+
+    const trimmed = url.trim();
+    if (!trimmed) return undefined;
+
+    try {
+      return decodeURIComponent(trimmed);
+    } catch {
+      return trimmed;
+    }
+  }
+
+  async emailQuote(quoteId: string, price?: number | string, url?: string) {
     const quote = await this.quoteModel
       .findById(quoteId)
       .populate('productId', 'title price payablePrice monthlyPrice')
@@ -215,7 +244,10 @@ export class QuoteService {
     if (!email)
       throw new HttpException('No email address found on this quote', 400);
 
-    const html = quoteEmailTemplate(quote, price, url);
+    const parsedPrice = this.parsePrice(price);
+    const parsedUrl = this.parseUrl(url);
+
+    const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
     await sendMailer(email, 'Your Quote Summary', html);
 
