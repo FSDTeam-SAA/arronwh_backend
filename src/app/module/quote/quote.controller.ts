@@ -100,8 +100,18 @@ export class QuoteController {
 
   @Post(':id/email')
   @ApiOperation({ summary: 'Send quote via email' })
+  @ApiQuery({ name: 'price', required: false, type: Number })
+  @ApiQuery({ name: 'url', required: false, type: String })
   @HttpCode(HttpStatus.OK)
-  async emailQuote(@Param('id') id: string) {
-    return this.quoteService.emailQuote(id);
+  async emailQuote(
+    @Param('id') id: string,
+    @Query('price') price?: number,
+    @Query('url') url?: string,
+  ) {
+    const result = await this.quoteService.emailQuote(id, price, url);
+    return {
+      message: 'Quote email sent successfully',
+      data: result,
+    };
   }
 }
