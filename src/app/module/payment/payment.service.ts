@@ -97,6 +97,7 @@ export class PaymentService {
     const paymentIntent = await this.stripe.paymentIntents.create({
       amount: Math.round(booking.price * 100),
       currency: 'gbp',
+      payment_method_configuration: config.stripe.paymentMethodConfig,
       automatic_payment_methods: {
         enabled: true,
       },
@@ -105,10 +106,11 @@ export class PaymentService {
         quoteId: quote._id.toString(),
         paymentType: 'booking',
         amount: String(booking.price),
+        publishableKey: stripePublishableKey,
       },
     });
-     const html = quoteEmailTemplate(quote);
-     const email = quote.personalInfo?.email;
+    const html = quoteEmailTemplate(quote);
+    const email = quote.personalInfo?.email;
     // 6. Save or update payment record
     if (existingPending) {
       existingPending.stripePaymentIntentId = paymentIntent.id;
