@@ -4,6 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,6 +25,24 @@ export class DashboardController {
 
     return {
       message: 'Dashboard overview retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get('earning-overview')
+  @ApiOperation({ summary: 'Get admin earning overview' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async earningOverview(
+    @Query('year') year?: string,
+    @Query('type') type?: string,
+  ) {
+    const filterYear = year ? parseInt(year, 10) : undefined;
+    const result = await this.dashboardService.earningOverview(filterYear, type);
+
+    return {
+      message: 'Earning overview retrieved successfully',
       data: result,
     };
   }
