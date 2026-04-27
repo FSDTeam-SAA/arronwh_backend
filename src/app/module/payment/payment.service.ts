@@ -75,6 +75,7 @@ export class PaymentService {
             clientSecret: existingPaymentIntent.client_secret,
             paymentIntentId: existingPaymentIntent.id,
             amount: booking.price,
+            currency: existingPaymentIntent.currency,
             publishableKey: stripePublishableKey,
           };
         }
@@ -94,10 +95,9 @@ export class PaymentService {
     }
 
     // 5. Create new Stripe payment intent
-    const paymentIntent = await this.stripe.paymentIntents.create({
+    const paymentIntentPayload: Stripe.PaymentIntentCreateParams = {
       amount: Math.round(booking.price * 100),
       currency: 'gbp',
-      payment_method_configuration: config.stripe.paymentMethodConfig,
       automatic_payment_methods: {
         enabled: true,
       },
@@ -108,7 +108,15 @@ export class PaymentService {
         amount: String(booking.price),
         publishableKey: stripePublishableKey,
       },
-    });
+    };
+    const paymentMethodConfig = config.stripe.paymentMethodConfig?.trim();
+    if (paymentMethodConfig) {
+      paymentIntentPayload.payment_method_configuration = paymentMethodConfig;
+    }
+
+    const paymentIntent = await this.stripe.paymentIntents.create(
+      paymentIntentPayload,
+    );
     const html = quoteEmailTemplate(quote);
     const email = quote.personalInfo?.email;
     // 6. Save or update payment record
@@ -136,6 +144,7 @@ export class PaymentService {
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
       amount: booking.price,
+      currency: paymentIntent.currency,
       publishableKey: stripePublishableKey,
     };
   }
