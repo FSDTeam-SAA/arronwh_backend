@@ -36,6 +36,7 @@ export default {
     publicKey: process.env.STRIPE_PUBLISHABLE_KEY,
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    paymentMethodConfig: process.env.STRIPE_PAYMENT_METHOD_CONFIG,
   },
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_SID,

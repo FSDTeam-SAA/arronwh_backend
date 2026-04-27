@@ -14,6 +14,7 @@ import { QuoteModule } from './app/module/quote/quote.module';
 import { BookingModule } from './app/module/booking/booking.module';
 import { ProductModule } from './app/module/product/product.module';
 import { UserModule } from './app/module/user/user.module';
+import { DashboardModule } from './app/module/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { UserModule } from './app/module/user/user.module';
     BookingModule,
     ProductModule,
     UserModule,
+    DashboardModule,
   ],
 
   controllers: [AppController],

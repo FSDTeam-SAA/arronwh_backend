@@ -6,7 +6,9 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import dotenv from 'dotenv';
 import { UtilsInterceptor } from './app/utils/utils.interceptor';
 import { GlobalExceptionFilter } from './app/middlewares/globalErrors.filter';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+import { join } from 'path';
+import * as fs from 'fs';
 dotenv.config();
 
 async function bootstrap() {
@@ -14,7 +16,28 @@ async function bootstrap() {
     logger: ['error', 'warn'],
   });
 
+  // Raw body for Stripe webhook
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
+
+  // Apple Pay verification — direct file response
+  app.use(
+    '/.well-known/apple-developer-merchantid-domain-association',
+    (req: Request, res: Response, next: NextFunction) => {
+      const filePath = join(
+        process.cwd(),
+        '.well-known',
+        'apple-developer-merchantid-domain-association',
+      );
+      console.log('Apple Pay file requested, path:', filePath);
+      console.log('File exists:', fs.existsSync(filePath));
+      if (fs.existsSync(filePath)) {
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.sendFile(filePath);
+      } else {
+        next();
+      }
+    },
+  );
 
   app.use(cookieParser());
   app.enableCors({
