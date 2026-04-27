@@ -5,6 +5,7 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import { Payment, PaymentDocument } from '../payment/entities/payment.entity';
 import { Contact, ContactDocument } from '../contact/entities/contact.entity';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
 
 @Injectable()
 export class DashboardService {
@@ -17,25 +18,23 @@ export class DashboardService {
     private readonly paymentModel: Model<PaymentDocument>,
     @InjectModel(Contact.name)
     private readonly contactModel: Model<ContactDocument>,
+    @InjectModel(Quote.name)
+    private readonly quoteModel: Model<QuoteDocument>,
   ) {}
 
   async getDashboardOverview() {
     const [
-      customerCount,
-      totalBookings,
-      completedBookings,
-      pendingBookings,
       totalRevenueResult,
       currentMonthRevenueResult,
       previousMonthRevenueResult,
-      recentBookings,
-      monthlyRevenueRaw,
-      recentContacts,
+      totalQuotes,
+      currentMonthQuotes,
+      previousMonthQuotes,
+      totalBookings,
+      surveyBookings,
+      installBookings,
+      confirmedBookings,
     ] = await Promise.all([
-      this.userModel.countDocuments({ role: 'user' }),
-      this.bookingModel.countDocuments(),
-      this.bookingModel.countDocuments({ status: 'completed' }),
-      this.bookingModel.countDocuments({ status: 'pending' }),
       this.paymentModel.aggregate([
         { $match: { status: 'completed' } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -71,28 +70,32 @@ export class DashboardService {
         },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
-      this.bookingModel
-        .find()
-        .sort({ createdAt: -1 })
-        .limit(5)
-        .select(
-          'customerName email phoneNumber bookingType status createdAt paymentStatus',
-        ),
-      this.paymentModel.aggregate([
-        { $match: { status: 'completed' } },
-        {
-          $group: {
-            _id: { $month: '$createdAt' },
-            total: { $sum: '$amount' },
-          },
+      this.quoteModel.countDocuments(),
+      this.quoteModel.countDocuments({
+        createdAt: {
+          $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
         },
-        { $sort: { _id: 1 } },
-      ]),
-      this.contactModel
-        .find()
-        .sort({ createdAt: -1 })
-        .limit(3)
-        .select('fullName email phoneNumber createdAt'),
+      }),
+      this.quoteModel.countDocuments({
+        createdAt: {
+          $gte: new Date(
+            new Date().getFullYear(),
+            new Date().getMonth() - 1,
+            1,
+          ),
+          $lt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        },
+      }),
+      this.bookingModel.countDocuments(),
+      this.bookingModel.countDocuments({
+        bookingFor: 'survey',
+        status: 'confirmed',
+      }),
+      this.bookingModel.countDocuments({
+        bookingFor: 'installation',
+        status: 'confirmed',
+      }),
+      this.bookingModel.countDocuments({ status: 'confirmed' }),
     ]);
 
     const totalRevenue = totalRevenueResult[0]?.total ?? 0;
@@ -108,6 +111,102 @@ export class DashboardService {
         : currentMonthRevenue > 0
           ? '100.0'
           : '0.0';
+
+    const quoteGrowth =
+      previousMonthQuotes > 0
+        ? (
+            ((currentMonthQuotes - previousMonthQuotes) / previousMonthQuotes) *
+            100
+          ).toFixed(1)
+        : currentMonthQuotes > 0
+          ? '100.0'
+          : '0.0';
+
+    const formatTrend = (val: number) =>
+      val > 0 ? `+${val}% ↑` : val < 0 ? `${val}% ↓` : `0%`;
+
+    return {
+      summaryCards: [
+        {
+          title: 'Quotes Generated',
+          value: totalQuotes,
+          subtitle: formatTrend(Number(quoteGrowth)),
+        },
+        {
+          title: 'Revenue',
+          value: totalRevenue,
+          subtitle: formatTrend(Number(revenueGrowth)),
+        },
+        {
+          title: 'Total Bookings',
+          value: totalBookings,
+          subtitle: '',
+        },
+        {
+          title: 'Bookings',
+          value: confirmedBookings,
+          subtitle: `Survey ${surveyBookings}\nInstalls ${installBookings}`,
+        },
+      ],
+    };
+  }
+
+  async earningOverview(year?: number, type?: string) {
+    const currentYear = year || new Date().getFullYear();
+
+    let monthlyRevenueRaw: any[] = [];
+    let monthlyBookingsRaw: any[] = [];
+
+    const promises: Promise<any>[] = [];
+
+    if (!type || type === 'revenue') {
+      promises.push(
+        this.paymentModel.aggregate([
+          {
+            $match: {
+              status: 'completed',
+              createdAt: {
+                $gte: new Date(currentYear, 0, 1),
+                $lt: new Date(currentYear + 1, 0, 1),
+              },
+            },
+          },
+          {
+            $group: {
+              _id: { $month: '$createdAt' },
+              total: { $sum: '$amount' },
+            },
+          },
+        ]).then((res) => {
+          monthlyRevenueRaw = res;
+        }),
+      );
+    }
+
+    if (!type || type === 'bookings') {
+      promises.push(
+        this.bookingModel.aggregate([
+          {
+            $match: {
+              createdAt: {
+                $gte: new Date(currentYear, 0, 1),
+                $lt: new Date(currentYear + 1, 0, 1),
+              },
+            },
+          },
+          {
+            $group: {
+              _id: { $month: '$createdAt' },
+              count: { $sum: 1 },
+            },
+          },
+        ]).then((res) => {
+          monthlyBookingsRaw = res;
+        }),
+      );
+    }
+
+    await Promise.all(promises);
 
     const monthNames = [
       'Jan',
@@ -128,69 +227,21 @@ export class DashboardService {
       monthlyRevenueRaw.map((item) => [item._id, item.total]),
     );
 
-    const earningOverview = monthNames.map((month, index) => ({
-      month,
-      revenue: monthlyRevenueMap.get(index + 1) ?? 0,
-    }));
+    const monthlyBookingsMap = new Map<number, number>(
+      monthlyBookingsRaw.map((item) => [item._id, item.count]),
+    );
 
-    return {
-      summaryCards: [
-        {
-          title: 'Active Customers',
-          value: customerCount,
-          subtitle: `${pendingBookings} pending`,
-        },
-        {
-          title: 'Revenue',
-          value: totalRevenue,
-          subtitle: `+${revenueGrowth}%`,
-        },
-        {
-          title: 'Total Bookings',
-          value: totalBookings,
-          subtitle: `${completedBookings} completed`,
-        },
-        {
-          title: 'Bookings',
-          value: totalBookings,
-          subtitle: `Done ${completedBookings} / Pending ${pendingBookings}`,
-        },
-      ],
-      earningOverview,
-      aiPerformance: [
-        {
-          title: 'Quiz Generated',
-          value: totalBookings,
-        },
-        {
-          title: 'Failed Payment',
-          value: await this.paymentModel.countDocuments({ status: 'failed' }),
-        },
-        {
-          title: 'Unread Contact',
-          value: await this.contactModel.countDocuments(),
-        },
-      ],
-      recentActivities: recentBookings.map((booking) => {
-        const bookingItem = booking as typeof booking & { createdAt?: Date };
-        // return {
-        //   name: booking.customerName,
-        //   email: booking.email,
-        //   phone: booking.phoneNumber,
-        //   action: booking.bookingType || 'Booking Created',
-        //   time: bookingItem.createdAt,
-        //   status: booking.status,
-        // };
-      }),
-      recentContacts: recentContacts.map((contact) => {
-        const contactItem = contact as typeof contact & { createdAt?: Date };
-        return {
-          name: contact.fullName,
-          email: contact.email,
-          phone: contact.phoneNumber,
-          time: contactItem.createdAt,
-        };
-      }),
-    };
+    const earningOverview = monthNames.map((month, index) => {
+      const result: any = { month };
+      if (!type || type === 'revenue') {
+        result.revenue = monthlyRevenueMap.get(index + 1) ?? 0;
+      }
+      if (!type || type === 'bookings') {
+        result.bookings = monthlyBookingsMap.get(index + 1) ?? 0;
+      }
+      return result;
+    });
+
+    return earningOverview;
   }
 }
