@@ -6,6 +6,7 @@ import { User, UserSchema } from '../user/entities/user.entity';
 import { Booking, BookingSchema } from '../booking/entities/booking.entity';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
 import { Contact, ContactSchema } from '../contact/entities/contact.entity';
+import { Quote, QuoteSchema } from '../quote/entities/quote.entity';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { Contact, ContactSchema } from '../contact/entities/contact.entity';
       { name: Booking.name, schema: BookingSchema },
       { name: Payment.name, schema: PaymentSchema },
       { name: Contact.name, schema: ContactSchema },
+      { name: Quote.name, schema: QuoteSchema },
     ]),
   ],
   controllers: [DashboardController],
