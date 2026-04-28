@@ -4,7 +4,6 @@ import {
   IsDateString,
   IsEmail,
   IsMongoId,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
