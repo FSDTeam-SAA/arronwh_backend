@@ -11,6 +11,23 @@ import { join } from 'path';
 import * as fs from 'fs';
 dotenv.config();
 
+const APPLE_PAY_ASSOCIATION_FILENAME =
+  'apple-developer-merchantid-domain-association';
+const APPLE_PAY_ASSOCIATION_CANDIDATE_PATHS = [
+  join(process.cwd(), '.well-known', APPLE_PAY_ASSOCIATION_FILENAME),
+  join(process.cwd(), 'well-known', APPLE_PAY_ASSOCIATION_FILENAME),
+];
+
+function resolveApplePayAssociationFilePath(): string | null {
+  for (const candidatePath of APPLE_PAY_ASSOCIATION_CANDIDATE_PATHS) {
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  return null;
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn'],
@@ -23,15 +40,9 @@ async function bootstrap() {
   app.use(
     '/.well-known/apple-developer-merchantid-domain-association',
     (req: Request, res: Response, next: NextFunction) => {
-      const filePath = join(
-        process.cwd(),
-        '.well-known',
-        'apple-developer-merchantid-domain-association',
-      );
-      console.log('Apple Pay file requested, path:', filePath);
-      console.log('File exists:', fs.existsSync(filePath));
-      if (fs.existsSync(filePath)) {
-        res.setHeader('Content-Type', 'application/octet-stream');
+      const filePath = resolveApplePayAssociationFilePath();
+      if (filePath) {
+        res.setHeader('Content-Type', 'text/plain');
         res.sendFile(filePath);
       } else {
         next();
