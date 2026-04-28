@@ -66,6 +66,10 @@ export class Quote {
   @Prop()
   payMounthly: boolean;
 
+  @Prop()
+  status: string;
+  enum: ['pending', 'accepted', 'rejected'];
+
   @Prop({
     type: {
       deposit: { type: Number },

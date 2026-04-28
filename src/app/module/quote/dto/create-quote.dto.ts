@@ -137,6 +137,11 @@ export class CreateQuoteDto {
   @IsBoolean()
   payMounthly?: boolean;
 
+  @ApiPropertyOptional({ example: 'pending', enum: ['pending', 'accepted', 'rejected'] })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   @ApiPropertyOptional({ type: PayMounthlyDataDto })
   @ValidateIf((o) => o.payMounthly === true)
   @IsOptional()
