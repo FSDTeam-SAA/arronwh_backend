@@ -15,6 +15,7 @@ import { BookingModule } from './app/module/booking/booking.module';
 import { ProductModule } from './app/module/product/product.module';
 import { UserModule } from './app/module/user/user.module';
 import { DashboardModule } from './app/module/dashboard/dashboard.module';
+import { PostcodeModule } from './app/module/postcode/postcode.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { DashboardModule } from './app/module/dashboard/dashboard.module';
     ProductModule,
     UserModule,
     DashboardModule,
+    PostcodeModule,
   ],
 
   controllers: [AppController],
