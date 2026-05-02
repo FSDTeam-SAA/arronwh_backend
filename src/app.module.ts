@@ -15,6 +15,7 @@ import { BookingModule } from './app/module/booking/booking.module';
 import { ProductModule } from './app/module/product/product.module';
 import { UserModule } from './app/module/user/user.module';
 import { DashboardModule } from './app/module/dashboard/dashboard.module';
+import { TwilioModule } from './app/module/twilio/twilio.module';
 import { PostcodeModule } from './app/module/postcode/postcode.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { PostcodeModule } from './app/module/postcode/postcode.module';
     ProductModule,
     UserModule,
     DashboardModule,
+    TwilioModule,
     PostcodeModule,
   ],
 

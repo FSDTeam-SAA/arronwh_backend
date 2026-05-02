@@ -1,91 +1,71 @@
-// twilio/twilio.controller.ts
 import {
   Controller,
   Post,
-  Get,
   Body,
-  Param,
-  Req,
   HttpCode,
   HttpStatus,
-  Header,
-  UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import { TwilioService } from './twilio.service';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
-  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { TwilioService } from './twilio.service';
-import { MakeCallDto } from './dto/make-call.dto';
 import AuthGuard from 'src/app/middlewares/auth.guard';
+import { UseGuards } from '@nestjs/common';
+import { SendOtpDto } from './dto/send-otp.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
-@ApiTags('calls')
-@Controller('calls')
+@ApiTags('twilio')
+@Controller('twilio')
 export class TwilioController {
   constructor(private readonly twilioService: TwilioService) {}
 
-  // @Post('make')
-  // @ApiOperation({ summary: 'Initiate an outbound call' })
-  // // @ApiBearerAuth('access-token')
-  // // @UseGuards(AuthGuard('admin'))
-  // @ApiBody({ type: MakeCallDto })
-  // @HttpCode(HttpStatus.OK)
-  // async makeCall(@Body() body: MakeCallDto, @Req() req: Request) {
-  //   const webhookBaseUrl = `${req.protocol}://${req.get('host')}`;
-  //   const result = await this.twilioService.makeCall(body.to, webhookBaseUrl);
-  //   return {
-  //     message: 'Call initiated successfully',
-  //     data: result,
-  //   };
-  // }
-  @Post('make')
-  @HttpCode(HttpStatus.OK)
-  async makeCall(@Body() body: MakeCallDto) {
-    const result = await this.twilioService.makeCall(body.to);
-    return {
-      message: 'Call initiated successfully',
-      data: result,
-    };
-  }
-
-  @Post('twiml')
-  @ApiOperation({ summary: 'Twilio webhook for call instructions' })
-  @HttpCode(200)
-  @Header('Content-Type', 'text/xml')
-  getTwiml(): string {
-    return this.twilioService.generateTwiml();
-  }
-
-  @Post('status')
-  @ApiOperation({ summary: 'Twilio webhook for call status updates' })
-  @HttpCode(HttpStatus.OK)
-  async handleStatusCallback(@Body() body: any) {
-    const result = await this.twilioService.handleStatusCallback(body);
-    return {
-      message: 'Status received',
-      data: result,
-    };
-  }
-
-  @Get(':sid')
-  @ApiOperation({ summary: 'Get call details by SID' })
-  @ApiParam({
-    name: 'sid',
-    description: 'Twilio call SID',
-    example: 'CA123456789',
+  @Post('send-otp')
+  @ApiOperation({ summary: 'Send OTP to a phone number' })
+  @ApiBody({
+    schema: {
+      properties: {
+        phone: {
+          type: 'string',
+          example: '+447911123456',
+          description: 'Phone number in E.164 format',
+        },
+      },
+    },
   })
-  // @ApiBearerAuth('access-token')
-  // @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
-  async getCall(@Param('sid') sid: string) {
-    const result = await this.twilioService.getCallStatus(sid);
+  async sendOtp(@Body() body: SendOtpDto) {
+    const result = await this.twilioService.sendOtp(body.phone);
     return {
-      message: 'Call details retrieved successfully',
-      data: result,
+      message: result ? 'OTP sent successfully' : 'Failed to send OTP',
+      success: result,
+    };
+  }
+
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'Verify OTP code entered by user' })
+  @ApiBody({
+    schema: {
+      properties: {
+        phone: {
+          type: 'string',
+          example: '+447911123456',
+        },
+        code: {
+          type: 'string',
+          example: '123456',
+        },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(@Body() body: VerifyOtpDto) {
+    const isValid = await this.twilioService.verifyOtp(body.phone, body.code);
+    return {
+      message: isValid ? 'OTP verified successfully' : 'Invalid or expired OTP',
+      success: isValid,
     };
   }
 }
