@@ -9,6 +9,9 @@ export default {
   mongoUri: process.env.MONGO_URI,
   isMongoEnabled: Boolean(process.env.MONGO_URI),
   bcryptSaltRounds: process.env.BCRYPT_SALT_ROUNDS,
+  account_sid: process.env.TWILIO_ACCOUNT_SID,
+  auth_token: process.env.TWILIO_AUTH_TOKEN,
+  verify_service_sid: process.env.TWILIO_VERIFY_SERVICE_SID,
   jwt: {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpire: process.env.JWT_EXPIRE,
