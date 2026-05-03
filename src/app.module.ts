@@ -16,6 +16,7 @@ import { ProductModule } from './app/module/product/product.module';
 import { UserModule } from './app/module/user/user.module';
 import { DashboardModule } from './app/module/dashboard/dashboard.module';
 import { PostcodeModule } from './app/module/postcode/postcode.module';
+import { BannerModule } from './app/module/banner/banner.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PostcodeModule } from './app/module/postcode/postcode.module';
     UserModule,
     DashboardModule,
     PostcodeModule,
+    BannerModule,
   ],
 
   controllers: [AppController],
