@@ -17,6 +17,7 @@ import { UserModule } from './app/module/user/user.module';
 import { DashboardModule } from './app/module/dashboard/dashboard.module';
 import { TwilioModule } from './app/module/twilio/twilio.module';
 import { PostcodeModule } from './app/module/postcode/postcode.module';
+import { BannerModule } from './app/module/banner/banner.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PostcodeModule } from './app/module/postcode/postcode.module';
     DashboardModule,
     TwilioModule,
     PostcodeModule,
+    BannerModule,
   ],
 
   controllers: [AppController],
