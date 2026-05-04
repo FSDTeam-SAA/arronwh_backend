@@ -19,6 +19,7 @@ import { TwilioModule } from './app/module/twilio/twilio.module';
 import { PostcodeModule } from './app/module/postcode/postcode.module';
 import { BannerModule } from './app/module/banner/banner.module';
 import { PartnersModule } from './app/module/partners/partners.module';
+import { YoloheatModule } from './app/module/yoloheat/yoloheat.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { PartnersModule } from './app/module/partners/partners.module';
     PostcodeModule,
     BannerModule,
     PartnersModule,
+    YoloheatModule,
   ],
 
   controllers: [AppController],
