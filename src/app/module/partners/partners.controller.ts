@@ -18,6 +18,7 @@ import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiQuery,
@@ -143,6 +144,71 @@ export class PartnersController {
 
     return {
       message: 'Partner update successfully',
+      data: result,
+    };
+  }
+
+  @Patch(':id/add-image')
+  @ApiOperation({
+    summary: 'Add images to the partner by ID',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
+  @UseInterceptors(FilesInterceptor('images', 10, fileUpload.uploadConfig))
+  @HttpCode(HttpStatus.CREATED)
+  async addImagesToPartner(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    const result = await this.partnersService.addImage(id, files);
+
+    return {
+      message: 'Images added to partner successfully',
+      data: result,
+    };
+  }
+
+  @Patch(':id/remove-image')
+  @ApiOperation({ summary: 'Remove image from partner' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        imageUrl: {
+          type: 'string',
+          example:
+            'https://res.cloudinary.com/demo/image/upload/v123/sample.jpg',
+        },
+      },
+      required: ['imageUrl'],
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async removeImageFromPartner(
+    @Param('id') id: string,
+    @Body('imageUrl') imageUrl: string,
+  ) {
+    const result = await this.partnersService.removeImage(id, imageUrl);
+
+    return {
+      message: 'Image removed successfully',
       data: result,
     };
   }

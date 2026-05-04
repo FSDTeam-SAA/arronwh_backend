@@ -20,6 +20,7 @@ import { PostcodeModule } from './app/module/postcode/postcode.module';
 import { BannerModule } from './app/module/banner/banner.module';
 import { PartnersModule } from './app/module/partners/partners.module';
 import { YoloheatModule } from './app/module/yoloheat/yoloheat.module';
+import { CustomersayModule } from './app/module/customersay/customersay.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { YoloheatModule } from './app/module/yoloheat/yoloheat.module';
     BannerModule,
     PartnersModule,
     YoloheatModule,
+    CustomersayModule,
   ],
 
   controllers: [AppController],
