@@ -2,16 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 
 export class CreateYoloheatDto {
-  @ApiPropertyOptional({ example: '' })
-  @IsString()
-  @IsOptional()
-  heder?: string;
-
-  @ApiPropertyOptional({ example: '' })
-  @IsString()
-  @IsOptional()
-  hederDiscription?: string;
-
   @ApiPropertyOptional({ type: String, format: 'binary' })
   @IsOptional()
   image?: any;

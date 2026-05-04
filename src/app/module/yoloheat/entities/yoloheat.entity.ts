@@ -6,12 +6,6 @@ export type YoloheatDocument = HydratedDocument<Yoloheat>;
 @Schema({ timestamps: true })
 export class Yoloheat {
   @Prop()
-  heder: string;
-
-  @Prop()
-  hederDiscription: string;
-
-  @Prop()
   image: string;
 
   @Prop()

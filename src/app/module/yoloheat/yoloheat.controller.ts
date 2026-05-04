@@ -18,6 +18,7 @@ import { CreateYoloheatDto } from './dto/create-yoloheat.dto';
 import { UpdateYoloheatDto } from './dto/update-yoloheat.dto';
 import {
   ApiBearerAuth,
+  ApiConsumes,
   ApiOperation,
   ApiQuery,
   ApiTags,
@@ -37,6 +38,7 @@ export class YoloheatController {
   @ApiOperation({
     summary: 'create yolohead',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
@@ -142,6 +144,7 @@ export class YoloheatController {
   @ApiOperation({
     summary: 'update yolohead',
   })
+  @ApiConsumes('multipart/form-data')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @UseInterceptors(FileInterceptor('image', fileUpload.uploadConfig))
