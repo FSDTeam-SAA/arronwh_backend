@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -85,6 +85,56 @@ export class PartnersService {
       new: true,
     });
     return result;
+  }
+
+  async addImage(id: string, files: Express.Multer.File[]) {
+    const existPartner = await this.partnerModel.findById(id);
+    if (!existPartner) {
+      throw new HttpException('Partner not found', 404);
+    }
+
+    if (!files || files.length === 0) {
+      throw new HttpException('No files uploaded', 400);
+    }
+
+    const fileDatas = await Promise.all(
+      files.map((file) => fileUpload.uploadToCloudinary(file)),
+    );
+
+    const imageUrls = fileDatas.map((data) => data.url);
+
+    const result = await this.partnerModel.findByIdAndUpdate(
+      id,
+      {
+        $push: { images: { $each: imageUrls } },
+      },
+      { new: true },
+    );
+
+    return result;
+  }
+
+  async removeImage(id: string, imageUrl: string) {
+    const partner = await this.partnerModel.findById(id);
+
+    if (!partner) {
+      throw new HttpException('Partner not found', 404);
+    }
+
+    if (!partner.images.includes(imageUrl)) {
+      throw new HttpException('Image not found in partner', 404);
+    }
+    await fileUpload.deleteFromCloudinary(imageUrl);
+
+    const updated = await this.partnerModel.findByIdAndUpdate(
+      id,
+      {
+        $pull: { images: imageUrl },
+      },
+      { new: true },
+    );
+
+    return updated;
   }
 
   async deletePartner(id: string) {
