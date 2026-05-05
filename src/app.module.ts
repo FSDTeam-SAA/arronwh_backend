@@ -21,6 +21,8 @@ import { BannerModule } from './app/module/banner/banner.module';
 import { PartnersModule } from './app/module/partners/partners.module';
 import { YoloheatModule } from './app/module/yoloheat/yoloheat.module';
 import { CustomersayModule } from './app/module/customersay/customersay.module';
+import { BoxtModule } from './app/module/boxt/boxt.module';
+import { PolicyModule } from './app/module/policy/policy.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { CustomersayModule } from './app/module/customersay/customersay.module';
     PartnersModule,
     YoloheatModule,
     CustomersayModule,
+    BoxtModule,
+    PolicyModule,
   ],
 
   controllers: [AppController],
