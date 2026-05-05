@@ -55,50 +55,50 @@ export class PostcodeService {
     };
   }
 
-  async autocompletePostcode(partial: string): Promise<{
-    suggestions: string[];
-    total: number;
-  }> {
-    const res = await fetch(
-      `https://api.postcodes.io/postcodes/${encodeURIComponent(partial)}/autocomplete`,
-    );
-    const data = await res.json();
+  // async autocompletePostcode(partial: string): Promise<{
+  //   suggestions: string[];
+  //   total: number;
+  // }> {
+  //   const res = await fetch(
+  //     `https://api.postcodes.io/postcodes/${encodeURIComponent(partial)}/autocomplete`,
+  //   );
+  //   const data = await res.json();
 
-    if (data.status !== 200 || !data.result) {
-      return { suggestions: [], total: 0 };
-    }
+  //   if (data.status !== 200 || !data.result) {
+  //     return { suggestions: [], total: 0 };
+  //   }
 
-    return {
-      suggestions: data.result ?? [],
-      total: data.result?.length ?? 0,
-    };
-  }
+  //   return {
+  //     suggestions: data.result ?? [],
+  //     total: data.result?.length ?? 0,
+  //   };
+  // }
 
-  async validatePostcode(postcode: string): Promise<{
-    valid: boolean;
-    postcode?: string;
-    region?: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-  }> {
-    const res = await fetch(
-      `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`,
-    );
-    const data = await res.json();
+  // async validatePostcode(postcode: string): Promise<{
+  //   valid: boolean;
+  //   postcode?: string;
+  //   region?: string;
+  //   country?: string;
+  //   latitude?: number;
+  //   longitude?: number;
+  // }> {
+  //   const res = await fetch(
+  //     `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`,
+  //   );
+  //   const data = await res.json();
 
-    if (data.status !== 200) {
-      return { valid: false };
-    }
+  //   if (data.status !== 200) {
+  //     return { valid: false };
+  //   }
 
-    const r = data.result;
-    return {
-      valid: true,
-      postcode: r.postcode,
-      region: r.region,
-      country: r.country,
-      latitude: r.latitude,
-      longitude: r.longitude,
-    };
-  }
+  //   const r = data.result;
+  //   return {
+  //     valid: true,
+  //     postcode: r.postcode,
+  //     region: r.region,
+  //     country: r.country,
+  //     latitude: r.latitude,
+  //     longitude: r.longitude,
+  //   };
+  // }
 }
