@@ -16,3 +16,15 @@ export class CreateYoloheatDto {
   @IsOptional()
   discription?: string;
 }
+
+export class CreateHeaderDataDto {
+  @ApiPropertyOptional({ example: '' })
+  @IsString()
+  @IsOptional()
+  headerTitle?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @IsString()
+  @IsOptional()
+  headerDiscription?: string;
+}
