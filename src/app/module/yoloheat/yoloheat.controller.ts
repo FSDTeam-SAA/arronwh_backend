@@ -14,8 +14,8 @@ import {
   Req,
 } from '@nestjs/common';
 import { YoloheatService } from './yoloheat.service';
-import { CreateYoloheatDto } from './dto/create-yoloheat.dto';
-import { UpdateYoloheatDto } from './dto/update-yoloheat.dto';
+import { CreateHeaderDataDto, CreateYoloheatDto } from './dto/create-yoloheat.dto';
+import { UpdateHeaderDataDto, UpdateYoloheatDto } from './dto/update-yoloheat.dto';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -33,6 +33,134 @@ import pick from 'src/app/helpers/pick';
 @Controller('yoloheat')
 export class YoloheatController {
   constructor(private readonly yoloheatService: YoloheatService) {}
+
+  @Post('header')
+  @ApiOperation({
+    summary: 'create header data',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.CREATED)
+  async createHeaderData(
+    @Body() createHeaderDataDto: CreateHeaderDataDto,
+  ) {
+    const result = await this.yoloheatService.createHeaderData(
+      createHeaderDataDto,
+    );
+
+    return {
+      message: 'header data created successfully',
+      data: result,
+    };
+  }
+
+  @Get('header')
+  @ApiOperation({
+    summary: 'find all header data',
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'searchTerm',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'headerTitle',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'headerDiscription',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'page',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'number',
+    name: 'limit',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'sortBy',
+    required: false,
+  })
+  @ApiQuery({
+    type: 'string',
+    name: 'sortOrder',
+    required: false,
+  })
+  @HttpCode(HttpStatus.OK)
+  async getAllHeaderData(@Req() req: Request) {
+    const filters = pick(req.query, [
+      'searchTerm',
+      'headerTitle',
+      'headerDiscription',
+    ]);
+    const params = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const result = await this.yoloheatService.getAllHeaderData(filters, params);
+
+    return {
+      message: 'header data retrieved successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Get('header/:id')
+  @ApiOperation({
+    summary: 'find single header data',
+  })
+  @HttpCode(HttpStatus.OK)
+  async getSingleHeaderData(@Param('id') id: string) {
+    const result = await this.yoloheatService.getSingleHeaderData(id);
+
+    return {
+      message: 'header data retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Patch('header/:id')
+  @ApiOperation({
+    summary: 'update header data',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async updateHeaderData(
+    @Param('id') id: string,
+    @Body() updateHeaderDataDto: UpdateHeaderDataDto,
+  ) {
+    const result = await this.yoloheatService.updateHeaderData(
+      id,
+      updateHeaderDataDto,
+    );
+
+    return {
+      message: 'header data updated successfully',
+      data: result,
+    };
+  }
+
+  @Delete('header/:id')
+  @ApiOperation({
+    summary: 'delete header data',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @HttpCode(HttpStatus.OK)
+  async deleteHeaderData(@Param('id') id: string) {
+    const result = await this.yoloheatService.deleteHeaderData(id);
+
+    return {
+      message: 'header data deleted successfully',
+      data: result,
+    };
+  }
 
   @Post()
   @ApiOperation({
