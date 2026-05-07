@@ -25,12 +25,12 @@ export class BookingService {
       throw new BadRequestException(`Quote with id ${quote} not found.`);
     }
 
-    // const existingBooking = await this.bookingModel.findOne({ quote });
-    // if (existingBooking) {
-    //   throw new BadRequestException(
-    //     `Booking already exists for quote ${quote}.`,
-    //   );
-    // }
+    const existingBooking = await this.bookingModel.findOne({ quote });
+    if (existingBooking) {
+      throw new BadRequestException(
+        `Booking already exists for quote ${quote}.`,
+      );
+    }
 
     const newBooking = new this.bookingModel({ quote, price });
     await newBooking.save();
