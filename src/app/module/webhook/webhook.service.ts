@@ -196,16 +196,17 @@ export class WebhookService {
     const quote = await this.quoteModel.findById(booking.quote);
     if (!quote) return;
 
+    // Update booking status to confirmed
+    await this.bookingModel.findByIdAndUpdate(payment.bookingId, {
+      status: 'confirmed',
+    });
+
     const html = quoteEmailTemplate(quote);
     await sendMailer(
       quote.personalInfo?.email!,
       'Your payment is successful',
       html,
     );
-    // Update booking status to confirmed
-    await this.bookingModel.findByIdAndUpdate(payment.bookingId, {
-      status: 'confirmed',
-    });
   }
 
   private async handlePaymentIntentFailed(event: Stripe.Event) {
