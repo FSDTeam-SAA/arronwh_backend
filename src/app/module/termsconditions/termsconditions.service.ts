@@ -55,9 +55,13 @@ export class TermsconditionsService {
     id: string,
     updateTermsconditionDto: UpdateTermsconditionDto,
   ) {
+    console.log(updateTermsconditionDto);
     const terms = await this.termsconditionModel.findByIdAndUpdate(
       id,
       updateTermsconditionDto,
+      {
+        new: true
+      },
     );
     if (!terms) {
       throw new NotFoundException('Terms and conditions not found');
