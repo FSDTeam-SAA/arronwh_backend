@@ -15,6 +15,7 @@ import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { Product, ProductDocument } from '../product/entitiy/product.entitiy';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
+import * as puppeteer from 'puppeteer';
 
 @Injectable()
 export class QuoteService {
@@ -253,4 +254,26 @@ export class QuoteService {
 
     return { message: 'Quote emailed successfully', sentTo: email };
   }
+
+  async downloadQuote(quoteId: string, price?: number | string, url?: string): Promise<Buffer> {
+  const quote = await this.quoteModel
+    .findById(quoteId)
+    .populate('productId', 'title price payablePrice monthlyPrice')
+    .populate('controller', 'title price')
+    .populate('extra', 'title price')
+    .lean();
+  if (!quote) throw new HttpException('Quote not found', 404);
+
+  const parsedPrice = this.parsePrice(price);
+  const parsedUrl = this.parseUrl(url);
+  const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
+
+  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'networkidle0' });
+  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+  await browser.close();
+
+  return Buffer.from(pdfBuffer);
+}
 }
