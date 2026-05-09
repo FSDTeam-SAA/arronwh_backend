@@ -24,6 +24,7 @@ import { CustomersayModule } from './app/module/customersay/customersay.module';
 import { BoxtModule } from './app/module/boxt/boxt.module';
 import { PolicyModule } from './app/module/policy/policy.module';
 import { TermsconditionsModule } from './app/module/termsconditions/termsconditions.module';
+import { SubscriberModule } from './app/module/subscriber/subscriber.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { TermsconditionsModule } from './app/module/termsconditions/termsconditi
     BoxtModule,
     PolicyModule,
     TermsconditionsModule,
+    SubscriberModule,
   ],
 
   controllers: [AppController],
