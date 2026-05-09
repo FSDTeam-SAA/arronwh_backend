@@ -9,11 +9,13 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { ApiBody, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 @Controller('quote')
 export class QuoteController {
@@ -61,42 +63,67 @@ export class QuoteController {
       data: result,
     };
   }
+  // @Get(':id/download')
+  // @ApiOperation({ summary: 'Download quote as PDF' })
+  // @ApiBody({
+  //   required: false,
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       price: { type: 'number', example: 2499.99 },
+  //       url: { type: 'string', example: 'http://localhost:5001' },
+  //     },
+  //   },
+  // })
+  // @HttpCode(HttpStatus.OK)
+  // async downloadQuote(
+  //   @Param('id') id: string,
+  //   @Res() res: Response,
+  //   @Body('price') bodyPrice?: number | string,
+  //   @Body('url') bodyUrl?: string,
+  //   @Query('price') queryPrice?: string,
+  //   @Query('url') queryUrl?: string,
+  // ) {
+  //   const pdfBuffer = await this.quoteService.downloadQuote(
+  //     id,
+  //     bodyPrice ?? queryPrice,
+  //     bodyUrl ?? queryUrl,
+  //   );
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a single quote' })
-  @HttpCode(HttpStatus.OK)
-  async getSingleQuote(@Param('id') id: string) {
-    const result = await this.quoteService.getSingleQuote(id);
-    return {
-      message: 'Quote fetched successfully',
-      data: result,
-    };
-  }
+  //   res.set({
+  //     'Content-Type': 'application/pdf',
+  //     'Content-Disposition': `attachment; filename="quote-${id}.pdf"`,
+  //     'Content-Length': pdfBuffer.length,
+  //   });
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a quote' })
-  @ApiBody({ type: UpdateQuoteDto })
-  @HttpCode(HttpStatus.OK)
-  async updateQuote(
+  //   res.end(pdfBuffer);
+  // }
+
+
+  // ✅ MOVED HERE - before @Get(':id')
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download quote as PDF' })
+  async downloadQuote(
     @Param('id') id: string,
-    @Body() updateQuoteDto: UpdateQuoteDto,
+    @Res() res: Response,
+    @Query('price') queryPrice?: string,
+    @Query('url') queryUrl?: string,
   ) {
-    const result = await this.quoteService.updateQuote(id, updateQuoteDto);
-    return {
-      message: 'Quote updated successfully',
-      data: result,
-    };
-  }
+    const pdfBuffer = await this.quoteService.downloadQuote(
+      id,
+      queryPrice,
+      queryUrl,
+    );
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a quote' })
-  @HttpCode(HttpStatus.OK)
-  async deleteQuote(@Param('id') id: string) {
-    const result = await this.quoteService.deleteQuote(id);
-    return result;
-  }
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="quote-${id}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
 
-  //email functionality will be added later add by mahabur
+    res.end(pdfBuffer);
+  }
+    //email functionality will be added later add by mahabur
 
   @Post(':id/email')
   @ApiOperation({ summary: 'Send quote via email' })
@@ -133,5 +160,39 @@ export class QuoteController {
       message: 'Quote email sent successfully',
       data: result,
     };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a single quote' })
+  @HttpCode(HttpStatus.OK)
+  async getSingleQuote(@Param('id') id: string) {
+    const result = await this.quoteService.getSingleQuote(id);
+    return {
+      message: 'Quote fetched successfully',
+      data: result,
+    };
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a quote' })
+  @ApiBody({ type: UpdateQuoteDto })
+  @HttpCode(HttpStatus.OK)
+  async updateQuote(
+    @Param('id') id: string,
+    @Body() updateQuoteDto: UpdateQuoteDto,
+  ) {
+    const result = await this.quoteService.updateQuote(id, updateQuoteDto);
+    return {
+      message: 'Quote updated successfully',
+      data: result,
+    };
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a quote' })
+  @HttpCode(HttpStatus.OK)
+  async deleteQuote(@Param('id') id: string) {
+    const result = await this.quoteService.deleteQuote(id);
+    return result;
   }
 }
