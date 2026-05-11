@@ -13,6 +13,8 @@ import {
   UseGuards,
   UploadedFile,
   Req,
+  Query,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileUpload } from 'src/app/helpers/fileUploder';
@@ -26,10 +28,12 @@ import {
 } from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import type { Request } from 'express';
+import type { Response } from 'express';
 import pick from 'src/app/helpers/pick';
 import { SubscriberService } from './subscriber.sevice';
 import { SendMessageDto } from './dto/send-message.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
+import { CallbackMessageDto } from './dto/callback.dto';
 
 @ApiTags('Subscriber')
 @Controller('subscriber')
@@ -55,32 +59,33 @@ export class SubscriberController {
   // ─── Send message to all active subscribers ──────────────────────────────
   @Post('send-message')
   @ApiOperation({
-    summary: 'Send a message with optional attachment to all active subscribers',
+    summary:
+      'Send a message with optional attachment to all active subscribers',
   })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseGuards(AuthGuard('admin'))
   @UseInterceptors(FileInterceptor('attachment', fileUpload.uploadConfig))
   @ApiBody({
-  schema: {
-    type: 'object',
-    required: ['subject', 'message'],
-    properties: {
-      subject: {
-        type: 'string',
-        example: 'Special offer from YOLO HEAT!',
-      },
-      message: {
-        type: 'string',
-        example: 'Hello subscribers, check out our new offer!',
-      },
-      attachment: {
-        type: 'string',
-        format: 'binary',
+    schema: {
+      type: 'object',
+      required: ['subject', 'message'],
+      properties: {
+        subject: {
+          type: 'string',
+          example: 'Special offer from YOLO HEAT!',
+        },
+        message: {
+          type: 'string',
+          example: 'Hello subscribers, check out our new offer!',
+        },
+        attachment: {
+          type: 'string',
+          format: 'binary',
+        },
       },
     },
-  },
-})
+  })
   @HttpCode(HttpStatus.OK)
   async sendMessage(
     @Body() sendMessageDto: SendMessageDto,
@@ -97,6 +102,20 @@ export class SubscriberController {
   }
 
   // ─── Get all subscribers ─────────────────────────────────────────────────
+  @Post('callback')
+  @ApiOperation({ summary: 'Send a callback request to the YOLO HEAT team' })
+  @ApiBody({ type: CallbackMessageDto })
+  @HttpCode(HttpStatus.OK)
+  async sendCallbackMessage(@Body() callbackMessageDto: CallbackMessageDto) {
+    const result =
+      await this.subscriberService.sendCallbackMessage(callbackMessageDto);
+
+    return {
+      message: 'Callback request sent successfully',
+      data: result,
+    };
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all subscribers' })
   @ApiBearerAuth('access-token')
@@ -105,8 +124,18 @@ export class SubscriberController {
   @ApiQuery({ name: 'status', required: false, type: String, example: '' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  @ApiQuery({ name: 'sortBy', required: false, type: String, example: 'createdAt' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'], example: 'desc' })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['asc', 'desc'],
+    example: 'desc',
+  })
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
   async getAllSubscribers(@Req() req: Request) {
@@ -120,6 +149,48 @@ export class SubscriberController {
       message: 'Subscribers fetched successfully',
       meta: result.meta,
       data: result.data,
+    };
+  }
+
+  @Get('quote/:quoteId/invoice/download')
+  @ApiOperation({ summary: 'Download quote sales invoice as PDF' })
+  @ApiQuery({ name: 'price', required: false, type: Number })
+  async downloadInvoicePdf(
+    @Param('quoteId') quoteId: string,
+    @Res() res: Response,
+    @Query('price') price?: string,
+  ) {
+    const pdfBuffer = await this.subscriberService.generateInvoicePdf(
+      quoteId,
+      price,
+    );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="invoice-${quoteId}.pdf"`,
+      'Content-Length': pdfBuffer.length,
+    });
+
+    res.end(pdfBuffer);
+  }
+
+  @Post('quote/:quoteId/invoice/email')
+  @ApiOperation({ summary: 'Send quote sales invoice PDF to customer email' })
+  @ApiQuery({ name: 'price', required: false, type: Number })
+  @HttpCode(HttpStatus.OK)
+  async sendInvoicePdfToQuoteCustomer(
+    @Param('quoteId') quoteId: string,
+    @Body('price') bodyPrice?: number | string,
+    @Query('price') queryPrice?: string,
+  ) {
+    const result = await this.subscriberService.sendInvoicePdfToQuoteCustomer(
+      quoteId,
+      bodyPrice ?? queryPrice,
+    );
+
+    return {
+      message: 'Invoice PDF email sent successfully',
+      data: result,
     };
   }
 
