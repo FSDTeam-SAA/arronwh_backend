@@ -25,7 +25,18 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
 
-const sendMailer = async (email: string, subject?: string, html?: string) => {
+type MailAttachment = {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+};
+
+const sendMailer = async (
+  email: string,
+  subject?: string,
+  html?: string,
+  attachments?: MailAttachment[],
+) => {
   const port = Number(config.email.port || 587);
   const authUser = config.email.address || config.email.from;
   const authPass = config.email.pass;
@@ -57,11 +68,16 @@ const sendMailer = async (email: string, subject?: string, html?: string) => {
       to: email,
       subject,
       html,
+      attachments,
     });
 
     console.log('Message sent:', info.messageId);
   } catch (error: unknown) {
-    const smtpError = error as { response?: unknown; message?: unknown; code?: unknown };
+    const smtpError = error as {
+      response?: unknown;
+      message?: unknown;
+      code?: unknown;
+    };
     const response = String(smtpError.response || '').toLowerCase();
     const message = String(smtpError.message || '');
 
