@@ -18,5 +18,6 @@ export class CallbackMessageDto {
 
   @ApiProperty({ example: 'Special offer from YOLO HEAT!' })
   @IsString()
+  @IsOptional()
   subject: string;
 }
