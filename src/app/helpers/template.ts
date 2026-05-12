@@ -193,4 +193,110 @@ function customerEmail({
   };
 }
 
+export const buildFollowUpEmail = (
+  name: string,
+  price: string,
+  code: string
+): string => {
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>YOLO HEAT</title>
+    <style>
+      body { margin: 0; padding: 0; background: #f3f5f8; font-family: Arial, sans-serif; }
+      .wrapper { max-width: 620px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #dde5ee; box-shadow: 0 8px 24px rgba(17, 46, 82, 0.08); }
+      
+      .brand { background: #e8ff00; padding: 18px 28px; color: #102f52; font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; }
+      
+      .header { background: #dfe7ef; padding: 28px 32px; border-bottom: 4px solid #e8ff00; }
+      .header h1 { color: #102f52; margin: 0; font-size: 28px; font-weight: 800; }
+      .header p { color: #354a60; margin: 10px 0 0; font-size: 15px; }
+
+      .body { padding: 28px 32px 32px; color: #102f52; }
+      
+      .message-card { background: #f7f9fb; border: 1px solid #dde5ee; border-radius: 10px; padding: 22px; }
+
+      .greeting { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+
+      .message { font-size: 15px; line-height: 1.7; color: #354a60; }
+
+      .highlight {
+        display: inline-block;
+        background: #e8ff00;
+        color: #102f52;
+        font-weight: 800;
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin: 6px 0;
+      }
+
+      .cta {
+        display: inline-block;
+        margin-top: 20px;
+        background: #102f52;
+        color: #ffffff !important;
+        padding: 12px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .cta:hover {
+        background: #0c2440;
+      }
+
+      .footer { background: #102f52; padding: 18px 32px; text-align: center; font-size: 12px; color: #dfe7ef; }
+      .footer strong { color: #e8ff00; }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrapper">
+      
+      <div class="brand">YOLO HEAT</div>
+
+      <div class="header">
+        <h1>No Worries. We've Got You.</h1>
+        <p>Your quote is about to expire — don’t miss this.</p>
+      </div>
+
+      <div class="body">
+        <div class="message-card">
+          
+          <div class="greeting">Hey ${name},</div>
+
+          <div class="message">
+            🥁... your quotes expire <strong>tonight</strong>.<br/><br/>
+
+            So, as a last attempt to secure your booking (and yes… help us hit our targets 🙄), 
+            we’ve unlocked something special for you.<br/><br/>
+
+            How does a <strong>FREE Hive Mini Smart Thermostat</strong> (worth up to 
+            <span class="highlight">£${price}</span>) sound?<br/><br/>
+
+            To lock in your price and claim your FREE gift, use code:<br/>
+            <span class="highlight">${code}</span><br/><br/>
+
+            We’ll add it to your installation — completely free.<br/>
+          </div>
+
+          <a href="#" class="cta">Complete your booking 👈</a>
+
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>You are receiving this because you requested a quote from YOLO HEAT.</p>
+        <p>&copy; ${new Date().getFullYear()} <strong>YOLO HEAT</strong>. All rights reserved.</p>
+      </div>
+
+    </div>
+  </body>
+  </html>
+  `;
+};
+
 export { teamEmail, customerEmail };
