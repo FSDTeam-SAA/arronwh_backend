@@ -26,6 +26,7 @@ import { PolicyModule } from './app/module/policy/policy.module';
 import { TermsconditionsModule } from './app/module/termsconditions/termsconditions.module';
 import { SubscriberModule } from './app/module/subscriber/subscriber.module';
 import { AboutusModule } from './app/module/aboutus/aboutus.module';
+import { InvoiceModule } from './app/module/invoice/invoice.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { AboutusModule } from './app/module/aboutus/aboutus.module';
     TermsconditionsModule,
     SubscriberModule,
     AboutusModule,
+    InvoiceModule,
   ],
 
   controllers: [AppController],

@@ -8,6 +8,7 @@ import { Quote } from './entities/quote.entity';
 import { Payment } from '../payment/entities/payment.entity';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
+import { buildFollowUpEmail } from 'src/app/helpers/template';
 
 @Injectable()
 export class QuoteCronService {
@@ -110,13 +111,13 @@ export class QuoteCronService {
       const email = quote.personalInfo?.email;
       if (!email) continue;
 
-      try {
-        const html = quoteEmailTemplate(quote);
-        await sendMailer(email, 'Still thinking? Your quote is saved!', html);
-        this.logger.log(`First follow-up sent to ${email}`);
-      } catch (err) {
-        this.logger.error(`Failed to send first follow-up to ${email}`, err);
-      }
+      // try {
+      //   const html = buildFollowUpEmail(quote.personalInfo.name, quote.productId.price, quote.followUpCode);
+      //   await sendMailer(email, 'Still thinking? Your quote is saved!', html);
+      //   this.logger.log(`First follow-up sent to ${email}`);
+      // } catch (err) {
+      //   this.logger.error(`Failed to send first follow-up to ${email}`, err);
+      // }
     }
 
     // Send second follow-up (48h) — skip if booking completed
