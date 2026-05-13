@@ -113,10 +113,20 @@ export class Invoice {
 
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);
 
-// Auto-generate invoice number before saving
+// Auto-generate invoice number before saving.
+// Count-based numbering can reuse a deleted invoice's number, so derive the
+// next value from the highest existing invoice number instead.
 InvoiceSchema.pre('save', async function () {
   if (!this.invoiceNumber) {
-    const count = await (this.constructor as any).countDocuments();
-    this.invoiceNumber = `INV-${String(count + 1).padStart(5, '0')}`;
+    const latestInvoice = await (this.constructor as any)
+      .findOne({ invoiceNumber: /^INV-\d+$/ })
+      .sort({ invoiceNumber: -1 })
+      .select('invoiceNumber')
+      .lean();
+
+    const latestNumber = latestInvoice?.invoiceNumber?.match(/^INV-(\d+)$/)?.[1];
+    const nextNumber = latestNumber ? Number(latestNumber) + 1 : 1;
+
+    this.invoiceNumber = `INV-${String(nextNumber).padStart(5, '0')}`;
   }
 });

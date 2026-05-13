@@ -26,6 +26,8 @@ interface ExtraItem    { name: string; numberOfExtra: number;       price: numbe
 
 @Injectable()
 export class InvoiceService {
+  private readonly invoiceNumberRetryLimit = 5;
+
   constructor(
     @InjectModel(Invoice.name)
     private readonly invoiceModel: Model<InvoiceDocument>,
@@ -88,6 +90,28 @@ export class InvoiceService {
     return Buffer.from(pdf);
   }
 
+  private isDuplicateInvoiceNumberError(error: any): boolean {
+    return error?.code === 11000 && Boolean(error?.keyPattern?.invoiceNumber);
+  }
+
+  private async saveInvoiceWithUniqueNumber(invoice: InvoiceDocument): Promise<InvoiceDocument> {
+    const shouldGenerateInvoiceNumber = !invoice.invoiceNumber;
+
+    for (let attempt = 0; attempt < this.invoiceNumberRetryLimit; attempt += 1) {
+      try {
+        return await invoice.save();
+      } catch (error) {
+        if (!this.isDuplicateInvoiceNumberError(error) || !shouldGenerateInvoiceNumber) {
+          throw error;
+        }
+
+        (invoice as any).invoiceNumber = undefined;
+      }
+    }
+
+    throw new BadRequestException('Could not generate a unique invoice number. Please try again.');
+  }
+
   // ─── CRUD ──────────────────────────────────────────────────────────────────
 
   async createInvoice(dto: CreateInvoiceDto): Promise<InvoiceDocument> {
@@ -122,7 +146,15 @@ export class InvoiceService {
       total,
     });
 
-    return invoice.save();
+    const email = invoice.customerInfo?.email;
+    const savedInvoice = await this.saveInvoiceWithUniqueNumber(invoice);
+
+    const invoiceHtml = this.buildHtml(savedInvoice);
+    const emailHtml   = invoiceEmailWrapper(invoiceHtml, savedInvoice.invoiceNumber);
+
+    await sendMailer(email, `Your Invoice ${savedInvoice.invoiceNumber} – Yolo Heat`, emailHtml);
+
+    return savedInvoice;
   }
 
   /**
@@ -171,7 +203,7 @@ export class InvoiceService {
       status: 'pending',
     });
 
-    return invoice.save();
+    return this.saveInvoiceWithUniqueNumber(invoice);
   }
 
   async getAllInvoices(params: IFilterParams, options: IOptions) {
