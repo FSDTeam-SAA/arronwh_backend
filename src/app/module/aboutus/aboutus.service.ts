@@ -81,7 +81,21 @@ export class AboutusService {
     };
   }
 
-  async update(id: string, updateAboutusDto: UpdateAboutusDto, files: Express.Multer.File[] | undefined) {
+  async update(
+    id: string,
+    updateAboutusDto: UpdateAboutusDto,
+    files: Express.Multer.File[] | undefined,
+  ) {
+    let uploadedImages: string[] = [];
+
+    if (files && files.length > 0) {
+      const results = await Promise.all(
+        files.map((file) => fileUpload.uploadToCloudinary(file)),
+      );
+
+      uploadedImages = results.map((img) => img.url);
+      updateAboutusDto.images = uploadedImages;
+    }
     const updated = await this.aboutModel.findByIdAndUpdate(
       id,
       updateAboutusDto,
