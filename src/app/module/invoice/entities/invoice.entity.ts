@@ -63,10 +63,6 @@ export class Invoice {
   @Prop({ unique: true })
   invoiceNumber: string;
 
-  /** Reference back to the originating quote */
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Quote', required: false })
-  quoteId?: Types.ObjectId;
-
   @Prop({ type: InvoiceCustomerInfo, required: true })
   customerInfo: InvoiceCustomerInfo;
 
