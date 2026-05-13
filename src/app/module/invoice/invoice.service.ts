@@ -183,8 +183,7 @@ export class InvoiceService {
         .find(where)
         .sort({ [sortBy]: sortOrder } as any)
         .skip(skip)
-        .limit(limit)
-        .populate('quoteId', 'personalInfo'),
+        .limit(limit),
       this.invoiceModel.countDocuments(where),
     ]);
 
@@ -194,7 +193,7 @@ export class InvoiceService {
   async getSingleInvoice(id: string): Promise<InvoiceDocument> {
     const invoice = await this.invoiceModel
       .findById(id)
-      .populate('quoteId', 'personalInfo');
+      .lean();
 
     if (!invoice) throw new BadRequestException(`Invoice ${id} not found.`);
     return invoice;
