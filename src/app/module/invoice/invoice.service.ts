@@ -18,6 +18,12 @@ import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import { invoiceHtmlTemplate } from 'src/app/helpers/invoice-html.template';
 import { invoiceEmailWrapper } from 'src/app/helpers/invoice-email.template';
 
+// ─── Typed item shapes matching the updated entity ───────────────────────────
+
+interface BoilerItem   { name: string; numberOfBoiler: number;      price: number }
+interface ControllerItem { name: string; numberOfControllers: number; price: number }
+interface ExtraItem    { name: string; numberOfExtra: number;       price: number }
+
 @Injectable()
 export class InvoiceService {
   constructor(
@@ -30,24 +36,25 @@ export class InvoiceService {
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
-  /** Compute subtotal, VAT and total from line-item arrays */
+  /**
+   * Compute subtotal, VAT and total from the three typed line-item arrays.
+   * Each item's contribution = price × qty (numberOfBoiler / numberOfControllers / numberOfExtra).
+   */
   private computeTotals(
-    boilers: { price: number; qty?: number; discount?: number }[],
-    controllers: { price: number; qty?: number; discount?: number }[],
-    extras: { price: number; qty?: number; discount?: number }[],
-    vatRate: number,
+    boilers:     BoilerItem[],
+    controllers: ControllerItem[],
+    extras:      ExtraItem[],
+    vatRate:     number,
   ) {
-    const lineTotal = (items: { price: number; qty?: number; discount?: number }[]) =>
-      items.reduce((acc, i) => acc + i.price * (i.qty ?? 1) - (i.discount ?? 0), 0);
+    const boilerTotal     = boilers.reduce((s, i) => s + i.price * i.numberOfBoiler, 0);
+    const controllerTotal = controllers.reduce((s, i) => s + i.price * i.numberOfControllers, 0);
+    const extraTotal      = extras.reduce((s, i) => s + i.price * i.numberOfExtra, 0);
 
-    const totalDiscount = [...boilers, ...controllers, ...extras]
-      .reduce((acc, i) => acc + (i.discount ?? 0), 0);
-
-    const subtotal  = lineTotal(boilers) + lineTotal(controllers) + lineTotal(extras);
+    const subtotal  = boilerTotal + controllerTotal + extraTotal;
     const vatAmount = parseFloat(((subtotal * vatRate) / 100).toFixed(2));
     const total     = parseFloat((subtotal + vatAmount).toFixed(2));
 
-    return { subtotal, vatAmount, total, totalDiscount };
+    return { subtotal, vatAmount, total };
   }
 
   /** Render the invoice as an HTML string */
@@ -56,9 +63,9 @@ export class InvoiceService {
       invoiceNumber: invoice.invoiceNumber,
       status:        invoice.status,
       customerInfo:  invoice.customerInfo,
-      boilers:       invoice.boilers ?? [],
-      controllers:   invoice.controllers ?? [],
-      extras:        invoice.extras ?? [],
+      boilers:       invoice.boilers       ?? [],
+      controllers:   invoice.controllers   ?? [],
+      extras:        invoice.extras        ?? [],
       subtotal:      invoice.subtotal,
       vatRate:       invoice.vatRate,
       vatAmount:     invoice.vatAmount,
@@ -93,16 +100,16 @@ export class InvoiceService {
       ...rest
     } = dto;
 
-    // Optional: if quoteId supplied, validate it exists
     if (quoteId) {
       const exists = await this.quoteModel.findById(quoteId).lean();
-      if (!exists) {
-        throw new BadRequestException(`Quote with id ${quoteId} not found.`);
-      }
+      if (!exists) throw new BadRequestException(`Quote with id ${quoteId} not found.`);
     }
 
-    const { subtotal, vatAmount, total, totalDiscount } = this.computeTotals(
-      boilers, controllers, extras, vatRate,
+    const { subtotal, vatAmount, total } = this.computeTotals(
+      boilers     as BoilerItem[],
+      controllers as ControllerItem[],
+      extras      as ExtraItem[],
+      vatRate,
     );
 
     const invoice = new this.invoiceModel({
@@ -114,7 +121,6 @@ export class InvoiceService {
       vatRate,
       subtotal,
       vatAmount,
-      totalDiscount,
       total,
     });
 
@@ -123,7 +129,7 @@ export class InvoiceService {
 
   /**
    * Build an Invoice directly from a Quote document.
-   * Useful when a quote is accepted and needs to be converted automatically.
+   * Uses the updated line-item shapes.
    */
   async createFromQuote(quoteId: string): Promise<InvoiceDocument> {
     const quote = await this.quoteModel
@@ -135,36 +141,36 @@ export class InvoiceService {
 
     if (!quote) throw new BadRequestException(`Quote ${quoteId} not found.`);
 
-    const boilers: any[]     = quote.productId
-      ? [{ label: quote.productId.title, price: quote.productId.payablePrice ?? 0 }]
-      : [];
-    const controllers: any[] = quote.controller
-      ? [{ label: quote.controller.title, price: quote.controller.price ?? 0 }]
-      : [];
-    const extras: any[]      = quote.extra
-      ? [{ label: quote.extra.title, price: quote.extra.price ?? 0 }]
+    const boilers: BoilerItem[] = quote.productId
+      ? [{ name: quote.productId.title, numberOfBoiler: 1, price: quote.productId.payablePrice ?? 0 }]
       : [];
 
-    const { subtotal, vatAmount, total } = this.computeTotals(
-      boilers, controllers, extras, 20,
-    );
+    const controllers: ControllerItem[] = quote.controller
+      ? [{ name: quote.controller.title, numberOfControllers: 1, price: quote.controller.price ?? 0 }]
+      : [];
+
+    const extras: ExtraItem[] = quote.extra
+      ? [{ name: quote.extra.title, numberOfExtra: 1, price: quote.extra.price ?? 0 }]
+      : [];
+
+    const { subtotal, vatAmount, total } = this.computeTotals(boilers, controllers, extras, 20);
 
     const invoice = new this.invoiceModel({
       quoteId: quote._id,
       customerInfo: {
-        name:    `${quote.personalInfo?.fastName ?? ''} ${quote.personalInfo?.sureName ?? ''}`.trim(),
-        email:   quote.personalInfo?.email ?? '',
-        phone:   quote.personalInfo?.mobleNumber,
+        name:     `${quote.personalInfo?.fastName ?? ''} ${quote.personalInfo?.sureName ?? ''}`.trim(),
+        email:    quote.personalInfo?.email    ?? '',
+        phone:    quote.personalInfo?.mobleNumber,
         postcode: quote.personalInfo?.postcode,
       },
       boilers,
       controllers,
       extras,
-      vatRate:   20,
+      vatRate: 20,
       subtotal,
       vatAmount,
       total,
-      status:    'pending',
+      status: 'pending',
     });
 
     return invoice.save();
@@ -196,27 +202,6 @@ export class InvoiceService {
     return invoice;
   }
 
-  // async updateInvoice(id: string, dto: UpdateInvoiceDto): Promise<InvoiceDocument> {
-  //   const invoice = await this.invoiceModel.findById(id);
-  //   if (!invoice) throw new BadRequestException(`Invoice ${id} not found.`);
-
-  //   // Recompute totals if line items changed
-  //   const boilers     = dto.boilers     ?? invoice.boilers;
-  //   const controllers = dto.controllers ?? invoice.controllers;
-  //   const extras      = dto.extras      ?? invoice.extras;
-  //   const vatRate     = dto.vatRate     ?? invoice.vatRate;
-
-  //   const { subtotal, vatAmount, total, totalDiscount } = this.computeTotals(
-  //     boilers, controllers, extras, vatRate,
-  //   );
-
-  //   return this.invoiceModel.findByIdAndUpdate(
-  //     id,
-  //     { ...dto, boilers, controllers, extras, vatRate, subtotal, vatAmount, totalDiscount, total },
-  //     { new: true },
-  //   );
-  // }
-
   async deleteInvoice(id: string) {
     const invoice = await this.invoiceModel.findById(id);
     if (!invoice) throw new BadRequestException(`Invoice ${id} not found.`);
@@ -245,7 +230,6 @@ export class InvoiceService {
 
     await sendMailer(email, `Your Invoice ${invoice.invoiceNumber} – Yolo Heat`, emailHtml);
 
-    // Track when it was emailed
     await this.invoiceModel.findByIdAndUpdate(id, { emailedAt: new Date() });
 
     return { message: 'Invoice emailed successfully.', sentTo: email };

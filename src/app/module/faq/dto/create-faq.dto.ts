@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 
 export class CreateFaqDto {
@@ -9,4 +9,10 @@ export class CreateFaqDto {
   @ApiProperty({ example: 'This is a car checker service.' })
   @IsString()
   answer: string;
+
+  @ApiPropertyOptional({ example: 'General' })
+  @IsString()
+  category: string;
+
+
 }
