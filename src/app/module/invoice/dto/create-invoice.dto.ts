@@ -90,11 +90,6 @@ export class InvoiceCustomerInfoDto {
 // ─── Main DTO ─────────────────────────────────────────────────────────────────
 
 export class CreateInvoiceDto {
-  @ApiPropertyOptional({ description: 'Link to an existing quote' })
-  @IsOptional()
-  @IsMongoId()
-  quoteId?: string;
-
   @ApiProperty({ type: InvoiceCustomerInfoDto })
   @ValidateNested()
   @Type(() => InvoiceCustomerInfoDto)

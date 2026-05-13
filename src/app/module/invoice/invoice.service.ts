@@ -96,14 +96,13 @@ export class InvoiceService {
       controllers = [],
       extras      = [],
       vatRate     = 20,
-      quoteId,
       ...rest
     } = dto;
 
-    if (quoteId) {
-      const exists = await this.quoteModel.findById(quoteId).lean();
-      if (!exists) throw new BadRequestException(`Quote with id ${quoteId} not found.`);
-    }
+    // if (quoteId) {
+    //   const exists = await this.quoteModel.findById(quoteId).lean();
+    //   if (!exists) throw new BadRequestException(`Quote with id ${quoteId} not found.`);
+    // }
 
     const { subtotal, vatAmount, total } = this.computeTotals(
       boilers     as BoilerItem[],
@@ -114,7 +113,6 @@ export class InvoiceService {
 
     const invoice = new this.invoiceModel({
       ...rest,
-      quoteId: quoteId ?? undefined,
       boilers,
       controllers,
       extras,

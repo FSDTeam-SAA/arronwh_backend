@@ -283,7 +283,7 @@ export const buildFollowUpEmail = (
             We’ll add it to your installation — completely free.<br/>
           </div>
 
-          <a href="#" class="cta">Complete your booking 👈</a>
+          <a href="https://arronwh-website.vercel.app/boilers/property-overview" class="cta">Complete your booking 👈</a>
 
         </div>
       </div>
