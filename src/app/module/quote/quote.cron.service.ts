@@ -109,15 +109,16 @@ export class QuoteCronService {
       }
 
       const email = quote.personalInfo?.email;
-      if (!email) continue;
+      const name = quote.personalInfo.title + ' ' + quote.personalInfo?.fastName + ' ' + quote.personalInfo?.sureName;
+      // const productPrice = await this.productModel.findById(quote.productId).select('price').lean();
 
-      // try {
-      //   const html = buildFollowUpEmail(quote.personalInfo.name, quote.productId.price, quote.followUpCode);
-      //   await sendMailer(email, 'Still thinking? Your quote is saved!', html);
-      //   this.logger.log(`First follow-up sent to ${email}`);
-      // } catch (err) {
-      //   this.logger.error(`Failed to send first follow-up to ${email}`, err);
-      // }
+      try {
+        // const html = buildFollowUpEmail(name, quote.productId.price, quote.followUpCode);
+        // await sendMailer(email, 'Still thinking? Your quote is saved!', html);
+        this.logger.log(`First follow-up sent to ${email}`);
+      } catch (err) {
+        this.logger.error(`Failed to send first follow-up to ${email}`, err);
+      }
     }
 
     // Send second follow-up (48h) — skip if booking completed
@@ -130,6 +131,7 @@ export class QuoteCronService {
       }
 
       const email = quote.personalInfo?.email;
+      const name = quote.personalInfo.title + ' ' + quote.personalInfo?.fastName + ' ' + quote.personalInfo?.sureName;
       if (!email) continue;
 
       try {
