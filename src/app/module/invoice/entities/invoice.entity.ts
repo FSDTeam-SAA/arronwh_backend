@@ -5,15 +5,37 @@ export type InvoiceDocument = HydratedDocument<Invoice>;
 
 // ─── Sub-schemas ──────────────────────────────────────────────────────────────
 
-class InvoiceLineItem {
+class InvoiceBoilerItem {
   @Prop({ required: true })
-  label: string;
+  name: string;
+
+  @Prop({ required: true, default: 1 })
+  numberOfBoiler: number;
 
   @Prop({ required: true, default: 0 })
   price: number;
+}
 
-  @Prop({ default: '' })
-  description: string;
+class InvoiceControllerItem {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true, default: 1 })
+  numberOfControllers: number;
+
+  @Prop({ required: true, default: 0 })
+  price: number;
+}
+
+class InvoiceExtraItem {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true, default: 1 })
+  numberOfExtra: number;
+
+  @Prop({ required: true, default: 0 })
+  price: number;
 }
 
 class InvoiceCustomerInfo {
@@ -49,16 +71,16 @@ export class Invoice {
   customerInfo: InvoiceCustomerInfo;
 
   /** Boiler / product line items */
-  @Prop({ type: [InvoiceLineItem], _id: false, default: [] })
-  boilers: InvoiceLineItem[];
+  @Prop({ type: [InvoiceBoilerItem], _id: false, default: [] })
+  boilers: InvoiceBoilerItem[];
 
   /** Controller line items */
-  @Prop({ type: [InvoiceLineItem], _id: false, default: [] })
-  controllers: InvoiceLineItem[];
+  @Prop({ type: [InvoiceControllerItem], _id: false, default: [] })
+  controllers: InvoiceControllerItem[];
 
   /** Extra line items */
-  @Prop({ type: [InvoiceLineItem], _id: false, default: [] })
-  extras: InvoiceLineItem[];
+  @Prop({ type: [InvoiceExtraItem], _id: false, default: [] })
+  extras: InvoiceExtraItem[];
 
   /** Pre-computed totals stored for quick retrieval */
   @Prop({ default: 0 })
@@ -68,7 +90,10 @@ export class Invoice {
   vatAmount: number;
 
   @Prop({ default: 20 })
-  vatRate: number; // percentage, default UK 20 %
+  vatRate: number;
+
+  @Prop({ default: 0 })
+  totalDiscount: number;
 
   @Prop({ default: 0 })
   total: number;
@@ -78,6 +103,9 @@ export class Invoice {
 
   @Prop({ required: false })
   dueDate?: Date;
+
+  @Prop({ required: false })
+  deliveryDate?: Date;
 
   @Prop({ required: false })
   notes?: string;

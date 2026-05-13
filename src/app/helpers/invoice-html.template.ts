@@ -1,480 +1,170 @@
-// interface LineItem {
-//   label: string;
-//   price: number;
-//   discount?: number;
-//   description?: string;
-//   qty?: number;
-// }
-
-// interface CustomerInfo {
-//   name: string;
-//   email: string;
-//   phone?: string;
-//   address?: string;
-//   postcode?: string;
-// }
-
-// export interface InvoiceTemplateData {
-//   invoiceNumber: string;
-//   status: string;
-//   customerInfo: CustomerInfo;
-//   boilers: LineItem[];
-//   controllers: LineItem[];
-//   extras: LineItem[];
-//   subtotal: number;
-//   vatRate: number;
-//   vatAmount: number;
-//   totalDiscount: number;
-//   total: number;
-//   dueDate?: Date | string;
-//   deliveryDate?: Date | string;
-//   notes?: string;
-//   createdAt?: Date | string;
-// }
-
-// // ─── Brand tokens ─────────────────────────────────────────────────────────────
-// const YELLOW = '#FBFF26';
-// const GREEN  = '#D0E7D5';
-// const DARK   = '#111111';
-// const BORDER = '#b5ceba';
-// const Y_BORDER = '#d4d800';
-
-// // ─── Inline SVG logo (matches the real Yolo Heat logotype exactly) ────────────
-// const LOGO_SVG = `
-// <svg width="180" height="40" viewBox="0 0 540 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-//   <rect x="2" y="2" width="76" height="76" rx="5" stroke="${DARK}" stroke-width="5" fill="none"/>
-//   <rect x="17" y="17" width="24" height="24" rx="3" stroke="${DARK}" stroke-width="4.5" fill="none"/>
-//   <text x="98" y="64"
-//         font-family="Arial,Helvetica,sans-serif"
-//         font-size="64"
-//         font-weight="700"
-//         letter-spacing="5"
-//         fill="${DARK}">YOLO HEAT</text>
-// </svg>`.trim();
-
-// // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-// const fmt = (n: number) =>
-//   `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-// const fmtDate = (d?: Date | string) => {
-//   if (!d) return '—';
-//   const date = d instanceof Date ? d : new Date(d);
-//   return date.toLocaleDateString('en-GB');
-// };
-
-// const statusBadge = (status: string) => {
-//   const styles: Record<string, string> = {
-//     paid:      'background:#d1fae5;color:#065f46;border:1px solid #6ee7b7',
-//     pending:   'background:#fef3c7;color:#92400e;border:1px solid #fcd34d',
-//     cancelled: 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
-//     refunded:  'background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd',
-//   };
-//   const s = styles[status] ?? 'background:#f3f4f6;color:#374151;border:1px solid #d1d5db';
-//   return `<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;${s}">${status}</span>`;
-// };
-
-// const buildRows = (items: LineItem[]): string =>
-//   items.map((item, i) => {
-//     const qty       = item.qty ?? 1;
-//     const discount  = item.discount ?? 0;
-//     const lineTotal = item.price * qty - discount;
-//     const bg = i % 2 === 0 ? GREEN : '#c2dfc9';
-//     return `<tr style="border-bottom:0.5px solid ${BORDER};background:${bg}">
-//       <td style="padding:8px 10px;text-align:center;color:#555;">${qty}</td>
-//       <td style="padding:8px 10px;text-align:left;color:#333;">${item.label}</td>
-//       <td style="padding:8px 10px;text-align:right;color:#333;">${fmt(item.price)}</td>
-//       <td style="padding:8px 10px;text-align:right;color:#333;">${discount ? fmt(discount) : '—'}</td>
-//       <td style="padding:8px 10px;text-align:right;color:#333;font-weight:700;">${fmt(lineTotal)}</td>
-//     </tr>`;
-//   }).join('');
-
-// // ─── Main template ────────────────────────────────────────────────────────────
-
-// export function invoiceHtmlTemplate(data: InvoiceTemplateData): string {
-//   const allRows = [
-//     buildRows(data.boilers ?? []),
-//     buildRows(data.controllers ?? []),
-//     buildRows(data.extras ?? []),
-//   ].join('') || `<tr><td colspan="5" style="padding:20px;text-align:center;color:#aaa">No items</td></tr>`;
-
-//   return `<!DOCTYPE html>
-// <html lang="en">
-// <head>
-// <meta charset="UTF-8"/>
-// <title>Invoice ${data.invoiceNumber}</title>
-// <style>
-//   *{box-sizing:border-box;margin:0;padding:0}
-//   body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#222;background:#e8f0ea}
-//   .page{max-width:720px;margin:0 auto;background:${GREEN};box-shadow:0 2px 16px rgba(0,0,0,0.10)}
-//   @media print{body{background:#fff}.page{box-shadow:none;max-width:100%}}
-// </style>
-// </head>
-// <body>
-// <div class="page">
-
-//   <!-- ── HEADER: yellow background, logo left, contact below ── -->
-//   <div style="background:${YELLOW};padding:22px 28px 16px">
-//     ${LOGO_SVG}
-//     <div style="font-size:11px;color:#333;line-height:1.85;margin-top:8px">
-//       London, United Kingdom &nbsp;&middot;&nbsp; P: 0800 123 4567 &nbsp;&middot;&nbsp; E: hello@yoloheat.co.uk
-//     </div>
-//   </div>
-
-//   <!-- ── BILL TO / SHIP TO / INVOICE ── -->
-//   <div style="display:flex;padding:16px 28px 14px;border-bottom:1px solid ${BORDER}">
-
-//     <div style="flex:1;padding-right:20px">
-//       <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:5px">Bill To:</div>
-//       <div style="font-size:11px;color:#333;line-height:1.85">
-//         ${data.customerInfo.name}<br>
-//         ${data.customerInfo.address ? data.customerInfo.address + '<br>' : ''}
-//         ${data.customerInfo.postcode ? data.customerInfo.postcode + '<br>' : ''}
-//         ${data.customerInfo.phone ?? ''}
-//       </div>
-//     </div>
-
-//     <div style="flex:1;padding-right:20px">
-//       <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:5px">Ship To:</div>
-//       <div style="font-size:11px;color:#333;line-height:1.85">
-//         ${data.customerInfo.name}<br>
-//         ${data.customerInfo.address ? data.customerInfo.address + '<br>' : ''}
-//         ${data.customerInfo.postcode ? data.customerInfo.postcode + '<br>' : ''}
-//         ${data.customerInfo.phone ?? ''}
-//       </div>
-//     </div>
-
-//     <div style="text-align:right;min-width:170px">
-//       <div style="font-size:30px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${DARK};line-height:1">INVOICE</div>
-//       <div style="font-size:11px;color:#444;margin-top:5px"># ${data.invoiceNumber}</div>
-//       <div style="font-size:11px;color:#444">${fmtDate(data.createdAt)}</div>
-//       <div style="margin-top:6px">${statusBadge(data.status)}</div>
-//     </div>
-//   </div>
-
-//   <!-- ── META BAR ── -->
-//   <div style="background:${YELLOW};display:flex;padding:7px 28px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;border-top:1px solid ${Y_BORDER};border-bottom:1px solid ${Y_BORDER}">
-//     <div style="flex:1">Salesperson</div>
-//     <div style="flex:1">Shipping Terms</div>
-//     <div style="flex:1">Delivery Date</div>
-//     <div style="flex:1;text-align:right">Due Date</div>
-//   </div>
-//   <div style="display:flex;padding:7px 28px 10px;font-size:11px;color:#444;border-bottom:1px solid ${BORDER}">
-//     <div style="flex:1">Yolo Heat Team</div>
-//     <div style="flex:1">Standard Install</div>
-//     <div style="flex:1">${fmtDate(data.deliveryDate)}</div>
-//     <div style="flex:1;text-align:right">${fmtDate(data.dueDate)}</div>
-//   </div>
-
-//   <!-- ── LINE ITEMS TABLE ── -->
-//   <table style="width:100%;border-collapse:collapse;font-size:11px">
-//     <thead>
-//       <tr style="background:${YELLOW};border-top:1px solid ${Y_BORDER};border-bottom:1px solid ${Y_BORDER}">
-//         <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:44px">QTY</th>
-//         <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333">Description</th>
-//         <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:100px">Unit Price</th>
-//         <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:90px">Discount</th>
-//         <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:90px">Total</th>
-//       </tr>
-//     </thead>
-//     <tbody>${allRows}</tbody>
-//   </table>
-
-//   <!-- ── DIVIDER + TOTALS ── -->
-//   <div style="border-top:1.5px solid #9aab9a;margin:6px 28px 0"></div>
-
-//   <div style="display:flex;justify-content:flex-end;padding:8px 28px 4px">
-//     <table style="width:215px;border-collapse:collapse;font-size:11px">
-//       <tr>
-//         <td style="padding:3px 6px;color:#555">Total Discount</td>
-//         <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.totalDiscount ?? 0)}</td>
-//       </tr>
-//       <tr>
-//         <td style="padding:3px 6px;color:#555">Subtotal</td>
-//         <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.subtotal)}</td>
-//       </tr>
-//       <tr>
-//         <td style="padding:3px 6px;color:#555">VAT (${data.vatRate}%)</td>
-//         <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.vatAmount)}</td>
-//       </tr>
-//       <tr style="border-top:1.5px solid #888">
-//         <td style="padding:8px 6px 4px;font-size:15px;font-weight:700;color:${DARK}">TOTAL</td>
-//         <td style="padding:8px 6px 4px;text-align:right;font-size:15px;font-weight:700;color:${DARK}">${fmt(data.total)}</td>
-//       </tr>
-//     </table>
-//   </div>
-
-//   <!-- ── PAYMENT NOTE ── -->
-//   <div style="border-top:0.5px solid ${BORDER};margin-top:10px;padding:8px 28px 4px;font-size:10px;color:#555">
-//     Make all checks payable to: <strong>Yolo Heat Ltd</strong> &nbsp;&middot;&nbsp; PayPal: hello@yoloheat.co.uk
-//   </div>
-//   <div style="padding:2px 28px 10px;font-size:10px;color:#555;font-style:italic">
-//     ${data.notes ?? 'Thank you for choosing Yolo Heat.'}
-//   </div>
-
-//   <!-- ── YELLOW FOOTER BAR ── -->
-//   <div style="height:8px;background:${YELLOW}"></div>
-
-//   <!-- ── SOCIAL FOOTER ── -->
-//   <div style="display:flex;justify-content:flex-end;padding:10px 28px 12px">
-//     <div style="display:flex;flex-direction:column;gap:3px">
-//       <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-//         facebook.com/yoloheat
-//         <span style="width:14px;height:14px;background:#3b5998;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-//       </div>
-//       <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-//         linkedin.com/company/yoloheat
-//         <span style="width:14px;height:14px;background:#0077b5;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-//       </div>
-//       <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-//         twitter.com/yoloheat
-//         <span style="width:14px;height:14px;background:#1da1f2;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-//       </div>
-//     </div>
-//   </div>
-
-// </div>
-// </body>
-// </html>`;
-// }
-
-
-interface LineItem {
-  label: string;
-  price: number;
-  discount?: number;
-  description?: string;
-  qty?: number;
-}
-
-interface CustomerInfo {
-  name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  postcode?: string;
-}
-
-export interface InvoiceTemplateData {
+export function invoiceHtmlTemplate(data: {
   invoiceNumber: string;
   status: string;
-  customerInfo: CustomerInfo;
-  boilers: LineItem[];
-  controllers: LineItem[];
-  extras: LineItem[];
+  customerInfo: { name: string; email: string; phone?: string; address?: string; postcode?: string };
+  boilers:     { name: string; numberOfBoiler: number;      price: number }[];
+  controllers: { name: string; numberOfControllers: number; price: number }[];
+  extras:      { name: string; numberOfExtra: number;       price: number }[];
   subtotal: number;
   vatRate: number;
   vatAmount: number;
-  totalDiscount: number;
+  totalDiscount?: number;
   total: number;
   dueDate?: Date | string;
   deliveryDate?: Date | string;
   notes?: string;
   createdAt?: Date | string;
-}
+}): string {
+  const fmt  = (n: number) => `£${n.toFixed(2)}`;
+  const date = (d?: Date | string) => d ? new Date(d).toLocaleDateString('en-GB') : '—';
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const YELLOW = '#FBFF26';
-const GREEN  = '#D0E7D5';
-const DARK   = '#111111';
-const BORDER = '#b5ceba';
-const Y_BORDER = '#d4d800';
+  // ─── Row builders ──────────────────────────────────────────────────────────
 
-// ─── Inline SVG logo (matches the real Yolo Heat logotype exactly) ────────────
-const LOGO_SVG = `
-<svg width="180" height="40" viewBox="0 0 540 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="2" width="76" height="76" rx="5" stroke="${DARK}" stroke-width="5" fill="none"/>
-  <rect x="17" y="17" width="24" height="24" rx="3" stroke="${DARK}" stroke-width="4.5" fill="none"/>
-  <text x="98" y="64"
-        font-family="Arial,Helvetica,sans-serif"
-        font-size="64"
-        font-weight="700"
-        letter-spacing="5"
-        fill="${DARK}">YOLO HEAT</text>
-</svg>`.trim();
+  const boilerRows = data.boilers.map(i => `
+    <tr>
+      <td style="padding:8px 12px;">${i.name}</td>
+      <td style="padding:8px 12px;text-align:center;">${i.numberOfBoiler}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price)}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price * i.numberOfBoiler)}</td>
+    </tr>`).join('');
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+  const controllerRows = data.controllers.map(i => `
+    <tr>
+      <td style="padding:8px 12px;">${i.name}</td>
+      <td style="padding:8px 12px;text-align:center;">${i.numberOfControllers}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price)}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price * i.numberOfControllers)}</td>
+    </tr>`).join('');
 
-const fmt = (n: number) =>
-  `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const extraRows = data.extras.map(i => `
+    <tr>
+      <td style="padding:8px 12px;">${i.name}</td>
+      <td style="padding:8px 12px;text-align:center;">${i.numberOfExtra}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price)}</td>
+      <td style="padding:8px 12px;text-align:right;">${fmt(i.price * i.numberOfExtra)}</td>
+    </tr>`).join('');
 
-const fmtDate = (d?: Date | string) => {
-  if (!d) return '—';
-  const date = d instanceof Date ? d : new Date(d);
-  return date.toLocaleDateString('en-GB');
-};
+  // ─── Section header helper ─────────────────────────────────────────────────
 
-const statusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    paid:      'background:#d1fae5;color:#065f46;border:1px solid #6ee7b7',
-    pending:   'background:#fef3c7;color:#92400e;border:1px solid #fcd34d',
-    cancelled: 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
-    refunded:  'background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd',
-  };
-  const s = styles[status] ?? 'background:#f3f4f6;color:#374151;border:1px solid #d1d5db';
-  return `<span style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;${s}">${status}</span>`;
-};
-
-const buildRows = (items: LineItem[]): string =>
-  items.map((item, i) => {
-    const qty       = item.qty ?? 1;
-    const discount  = item.discount ?? 0;
-    const lineTotal = item.price * qty - discount;
-    const bg = i % 2 === 0 ? GREEN : '#c2dfc9';
-    return `<tr style="border-bottom:0.5px solid ${BORDER};background:${bg}">
-      <td style="padding:8px 10px;text-align:center;color:#555;">${qty}</td>
-      <td style="padding:8px 10px;text-align:left;color:#333;">${item.label}</td>
-      <td style="padding:8px 10px;text-align:right;color:#333;">${fmt(item.price)}</td>
-      <td style="padding:8px 10px;text-align:right;color:#333;">${discount ? fmt(discount) : '—'}</td>
-      <td style="padding:8px 10px;text-align:right;color:#333;font-weight:700;">${fmt(lineTotal)}</td>
+  const sectionHeader = (label: string) => `
+    <tr>
+      <td colspan="4"
+          style="padding:6px 12px;background:#f0f0e8;font-size:11px;
+                 font-weight:700;letter-spacing:.06em;color:#555;text-transform:uppercase;">
+        ${label}
+      </td>
     </tr>`;
-  }).join('');
 
-// ─── Main template ────────────────────────────────────────────────────────────
+  const hasBoilers     = data.boilers.length     > 0;
+  const hasControllers = data.controllers.length > 0;
+  const hasExtras      = data.extras.length      > 0;
 
-export function invoiceHtmlTemplate(data: InvoiceTemplateData): string {
-  const allRows = [
-    buildRows(data.boilers ?? []),
-    buildRows(data.controllers ?? []),
-    buildRows(data.extras ?? []),
-  ].join('') || `<tr><td colspan="5" style="padding:20px;text-align:center;color:#aaa">No items</td></tr>`;
-
-  return `<!DOCTYPE html>
+  return `
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<title>Invoice ${data.invoiceNumber}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#222;background:#e8f0ea}
-  .page{max-width:720px;margin:0 auto;background:${GREEN};box-shadow:0 2px 16px rgba(0,0,0,0.10)}
-  @media print{body{background:#fff}.page{box-shadow:none;max-width:100%}}
-</style>
+  <meta charset="UTF-8"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #222; background: #fff; }
+    table { border-collapse: collapse; width: 100%; }
+  </style>
 </head>
-<body>
-<div class="page">
+<body style="padding:32px;">
 
-  <!-- ── HEADER: yellow background, logo left, contact below ── -->
-  <div style="background:${YELLOW};padding:22px 28px 16px">
-    ${LOGO_SVG}
-    <div style="font-size:11px;color:#333;line-height:1.85;margin-top:8px">
-      London, United Kingdom &nbsp;&middot;&nbsp; P: 0800 123 4567 &nbsp;&middot;&nbsp; E: hello@yoloheat.co.uk
-    </div>
-  </div>
-
-  <!-- ── BILL TO / SHIP TO / INVOICE ── -->
-  <div style="display:flex;padding:16px 28px 14px;border-bottom:1px solid ${BORDER}">
-
-    <div style="flex:1;padding-right:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:5px">Bill To:</div>
-      <div style="font-size:11px;color:#333;line-height:1.85">
-        ${data.customerInfo.name}<br>
-        ${data.customerInfo.address ? data.customerInfo.address + '<br>' : ''}
-        ${data.customerInfo.postcode ? data.customerInfo.postcode + '<br>' : ''}
-        ${data.customerInfo.phone ?? ''}
-      </div>
-    </div>
-
-    <div style="flex:1;padding-right:20px">
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:5px">Ship To:</div>
-      <div style="font-size:11px;color:#333;line-height:1.85">
-        ${data.customerInfo.name}<br>
-        ${data.customerInfo.address ? data.customerInfo.address + '<br>' : ''}
-        ${data.customerInfo.postcode ? data.customerInfo.postcode + '<br>' : ''}
-        ${data.customerInfo.phone ?? ''}
-      </div>
-    </div>
-
-    <div style="text-align:right;min-width:170px">
-      <div style="font-size:30px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${DARK};line-height:1">INVOICE</div>
-      <div style="font-size:11px;color:#444;margin-top:5px"># ${data.invoiceNumber}</div>
-      <div style="font-size:11px;color:#444">${fmtDate(data.createdAt)}</div>
-      <div style="margin-top:6px">${statusBadge(data.status)}</div>
-    </div>
-  </div>
-
-  <!-- ── META BAR ── -->
-  <div style="background:${YELLOW};display:flex;padding:7px 28px;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;border-top:1px solid ${Y_BORDER};border-bottom:1px solid ${Y_BORDER}">
-    <div style="flex:1">Salesperson</div>
-    <div style="flex:1">Shipping Terms</div>
-    <div style="flex:1">Delivery Date</div>
-    <div style="flex:1;text-align:right">Due Date</div>
-  </div>
-  <div style="display:flex;padding:7px 28px 10px;font-size:11px;color:#444;border-bottom:1px solid ${BORDER}">
-    <div style="flex:1">Yolo Heat Team</div>
-    <div style="flex:1">Standard Install</div>
-    <div style="flex:1">${fmtDate(data.deliveryDate)}</div>
-    <div style="flex:1;text-align:right">${fmtDate(data.dueDate)}</div>
-  </div>
-
-  <!-- ── LINE ITEMS TABLE ── -->
-  <table style="width:100%;border-collapse:collapse;font-size:11px">
-    <thead>
-      <tr style="background:${YELLOW};border-top:1px solid ${Y_BORDER};border-bottom:1px solid ${Y_BORDER}">
-        <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:44px">QTY</th>
-        <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333">Description</th>
-        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:100px">Unit Price</th>
-        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:90px">Discount</th>
-        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#333;width:90px">Total</th>
-      </tr>
-    </thead>
-    <tbody>${allRows}</tbody>
+  <!-- Header -->
+  <table style="margin-bottom:28px;">
+    <tr>
+      <td>
+        <div style="font-size:24px;font-weight:900;letter-spacing:-1px;color:#1a2e1a;">
+          ■ YOLO HEAT
+        </div>
+        <div style="font-size:11px;color:#666;margin-top:4px;">
+          London, United Kingdom · hello@yoloheat.co.uk
+        </div>
+      </td>
+      <td style="text-align:right;">
+        <div style="font-size:20px;font-weight:700;color:#1a2e1a;">INVOICE</div>
+        <div style="font-size:13px;color:#444;margin-top:4px;">${data.invoiceNumber}</div>
+        <div style="margin-top:8px;">
+          <span style="background:${data.status === 'paid' ? '#22c55e' : data.status === 'cancelled' ? '#ef4444' : '#f59e0b'};
+                       color:#fff;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;
+                       text-transform:uppercase;">
+            ${data.status}
+          </span>
+        </div>
+      </td>
+    </tr>
   </table>
 
-  <!-- ── DIVIDER + TOTALS ── -->
-  <div style="border-top:1.5px solid #9aab9a;margin:6px 28px 0"></div>
+  <!-- Meta -->
+  <table style="margin-bottom:24px;font-size:12px;color:#555;">
+    <tr>
+      <td style="width:50%;vertical-align:top;">
+        <strong style="color:#1a2e1a;">Bill To</strong><br/>
+        <span style="font-size:14px;font-weight:600;color:#222;">${data.customerInfo.name}</span><br/>
+        ${data.customerInfo.email}<br/>
+        ${data.customerInfo.phone  ? data.customerInfo.phone  + '<br/>' : ''}
+        ${data.customerInfo.address ? data.customerInfo.address + '<br/>' : ''}
+        ${data.customerInfo.postcode ?? ''}
+      </td>
+      <td style="width:50%;text-align:right;vertical-align:top;">
+        <table style="margin-left:auto;font-size:12px;">
+          <tr><td style="padding:2px 8px;color:#888;">Issue Date</td>
+              <td style="padding:2px 0;font-weight:600;">${date(data.createdAt)}</td></tr>
+          <tr><td style="padding:2px 8px;color:#888;">Due Date</td>
+              <td style="padding:2px 0;font-weight:600;">${date(data.dueDate)}</td></tr>
+          ${data.deliveryDate ? `<tr><td style="padding:2px 8px;color:#888;">Delivery</td>
+              <td style="padding:2px 0;font-weight:600;">${date(data.deliveryDate)}</td></tr>` : ''}
+        </table>
+      </td>
+    </tr>
+  </table>
 
-  <div style="display:flex;justify-content:flex-end;padding:8px 28px 4px">
-    <table style="width:215px;border-collapse:collapse;font-size:11px">
-      <tr>
-        <td style="padding:3px 6px;color:#555">Total Discount</td>
-        <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.totalDiscount ?? 0)}</td>
+  <!-- Line items -->
+  <table style="margin-bottom:20px;border:1px solid #e8e8e0;border-radius:6px;overflow:hidden;">
+    <thead>
+      <tr style="background:#1a2e1a;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">
+        <th style="padding:10px 12px;text-align:left;">Description</th>
+        <th style="padding:10px 12px;text-align:center;">Qty</th>
+        <th style="padding:10px 12px;text-align:right;">Unit Price</th>
+        <th style="padding:10px 12px;text-align:right;">Line Total</th>
       </tr>
-      <tr>
-        <td style="padding:3px 6px;color:#555">Subtotal</td>
-        <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.subtotal)}</td>
-      </tr>
-      <tr>
-        <td style="padding:3px 6px;color:#555">VAT (${data.vatRate}%)</td>
-        <td style="padding:3px 6px;text-align:right;font-weight:700;color:#222">${fmt(data.vatAmount)}</td>
-      </tr>
-      <tr style="border-top:1.5px solid #888">
-        <td style="padding:8px 6px 4px;font-size:15px;font-weight:700;color:${DARK}">TOTAL</td>
-        <td style="padding:8px 6px 4px;text-align:right;font-size:15px;font-weight:700;color:${DARK}">${fmt(data.total)}</td>
-      </tr>
-    </table>
-  </div>
+    </thead>
+    <tbody>
+      ${hasBoilers     ? sectionHeader('Boilers')     + boilerRows     : ''}
+      ${hasControllers ? sectionHeader('Controllers') + controllerRows : ''}
+      ${hasExtras      ? sectionHeader('Extras')      + extraRows      : ''}
+    </tbody>
+  </table>
 
-  <!-- ── PAYMENT NOTE ── -->
-  <div style="border-top:0.5px solid ${BORDER};margin-top:10px;padding:8px 28px 4px;font-size:10px;color:#555">
-    Make all checks payable to: <strong>Yolo Heat Ltd</strong> &nbsp;&middot;&nbsp; PayPal: hello@yoloheat.co.uk
-  </div>
-  <div style="padding:2px 28px 10px;font-size:10px;color:#555;font-style:italic">
-    ${data.notes ?? 'Thank you for choosing Yolo Heat.'}
-  </div>
+  <!-- Totals -->
+  <table style="margin-left:auto;width:260px;font-size:13px;margin-bottom:24px;">
+    <tr>
+      <td style="padding:4px 0;color:#666;">Subtotal</td>
+      <td style="padding:4px 0;text-align:right;">${fmt(data.subtotal)}</td>
+    </tr>
+    ${(data.totalDiscount ?? 0) > 0 ? `
+    <tr>
+      <td style="padding:4px 0;color:#666;">Discount</td>
+      <td style="padding:4px 0;text-align:right;color:#22c55e;">-${fmt(data.totalDiscount!)}</td>
+    </tr>` : ''}
+    <tr>
+      <td style="padding:4px 0;color:#666;">VAT (${data.vatRate}%)</td>
+      <td style="padding:4px 0;text-align:right;">${fmt(data.vatAmount)}</td>
+    </tr>
+    <tr style="border-top:2px solid #1a2e1a;font-weight:700;font-size:15px;">
+      <td style="padding:8px 0 0;">Total</td>
+      <td style="padding:8px 0 0;text-align:right;">${fmt(data.total)}</td>
+    </tr>
+  </table>
 
-  <!-- ── YELLOW FOOTER BAR ── -->
-  <div style="height:8px;background:${YELLOW}"></div>
+  <!-- Notes -->
+  ${data.notes ? `
+  <div style="border-top:1px solid #e8e8e0;padding-top:14px;font-size:12px;color:#666;">
+    <strong style="color:#333;">Notes:</strong><br/>${data.notes}
+  </div>` : ''}
 
-  <!-- ── SOCIAL FOOTER ── -->
-  <div style="display:flex;justify-content:flex-end;padding:10px 28px 12px">
-    <div style="display:flex;flex-direction:column;gap:3px">
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-        facebook.com/yoloheat
-        <span style="width:14px;height:14px;background:#3b5998;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-        linkedin.com/company/yoloheat
-        <span style="width:14px;height:14px;background:#0077b5;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:#444">
-        twitter.com/yoloheat
-        <span style="width:14px;height:14px;background:#1da1f2;border-radius:50%;display:inline-block;flex-shrink:0"></span>
-      </div>
-    </div>
-  </div>
-
-</div>
 </body>
 </html>`;
 }

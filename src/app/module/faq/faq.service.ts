@@ -12,7 +12,7 @@ export class FaqService {
     private readonly faqModel: Model<FaqDocument>,
   ) {}
 
-  async createFaq(payload: { question: string; answer: string }) {
+  async createFaq(payload: { question: string; answer: string; category: string }) {
     const faq = await this.faqModel.create(payload);
     return faq;
   }
@@ -20,7 +20,7 @@ export class FaqService {
   async getAllFaq(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
 
-    const searchableFields = ['question', 'answer'];
+    const searchableFields = ['question', 'answer', 'category'];
     const { searchTerm, ...filterData } = params;
 
     let whereConditions: any = {};
@@ -57,7 +57,7 @@ export class FaqService {
     return faq;
   }
 
-  async updateFaq(id: string, payload: { question?: string; answer?: string }) {
+  async updateFaq(id: string, payload: { question?: string; answer?: string; category?: string }) {
     const faq = await this.faqModel.findByIdAndUpdate(id, payload, {
       new: true,
     });
