@@ -11,4 +11,9 @@ export class UpdateFaqDto {
   @IsOptional()
   @IsString()
   answer?: string;
+
+  @ApiPropertyOptional({ example: 'General' })
+  @IsOptional()
+  @IsString()
+  category?: string;
 }
