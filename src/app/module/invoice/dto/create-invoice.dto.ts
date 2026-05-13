@@ -14,20 +14,52 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 // ─── Nested DTOs ──────────────────────────────────────────────────────────────
 
-export class InvoiceLineItemDto {
+export class InvoiceBoilerItemDto {
   @ApiProperty({ example: 'Worcester Bosch 30kW Combi Boiler' })
   @IsString()
-  label: string;
+  name: string;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  @Min(0)
+  numberOfBoiler: number;
 
   @ApiProperty({ example: 1200 })
   @IsNumber()
   @Min(0)
   price: number;
+}
 
-  @ApiPropertyOptional({ example: 'A-rated energy efficient boiler' })
-  @IsOptional()
+export class InvoiceControllerItemDto {
+  @ApiProperty({ example: 'Nest Learning Thermostat' })
   @IsString()
-  description?: string;
+  name: string;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  @Min(0)
+  numberOfControllers: number;
+
+  @ApiProperty({ example: 250 })
+  @IsNumber()
+  @Min(0)
+  price: number;
+}
+
+export class InvoiceExtraItemDto {
+  @ApiProperty({ example: 'Magnetic Filter' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  @Min(0)
+  numberOfExtra: number;
+
+  @ApiProperty({ example: 80 })
+  @IsNumber()
+  @Min(0)
+  price: number;
 }
 
 export class InvoiceCustomerInfoDto {
@@ -68,26 +100,26 @@ export class CreateInvoiceDto {
   @Type(() => InvoiceCustomerInfoDto)
   customerInfo: InvoiceCustomerInfoDto;
 
-  @ApiPropertyOptional({ type: [InvoiceLineItemDto] })
+  @ApiPropertyOptional({ type: [InvoiceBoilerItemDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceLineItemDto)
-  boilers?: InvoiceLineItemDto[];
+  @Type(() => InvoiceBoilerItemDto)
+  boilers?: InvoiceBoilerItemDto[];
 
-  @ApiPropertyOptional({ type: [InvoiceLineItemDto] })
+  @ApiPropertyOptional({ type: [InvoiceControllerItemDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceLineItemDto)
-  controllers?: InvoiceLineItemDto[];
+  @Type(() => InvoiceControllerItemDto)
+  controllers?: InvoiceControllerItemDto[];
 
-  @ApiPropertyOptional({ type: [InvoiceLineItemDto] })
+  @ApiPropertyOptional({ type: [InvoiceExtraItemDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceLineItemDto)
-  extras?: InvoiceLineItemDto[];
+  @Type(() => InvoiceExtraItemDto)
+  extras?: InvoiceExtraItemDto[];
 
   @ApiPropertyOptional({ example: 20, description: 'VAT rate as a percentage' })
   @IsOptional()
@@ -104,6 +136,11 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @ApiPropertyOptional({ example: '2026-06-10' })
+  @IsOptional()
+  @IsDateString()
+  deliveryDate?: string;
 
   @ApiPropertyOptional({ example: 'Thank you for choosing Yolo Heat!' })
   @IsOptional()

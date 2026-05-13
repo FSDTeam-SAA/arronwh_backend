@@ -39,6 +39,7 @@ export class FaqController {
       properties: {
         question: { type: 'string', example: 'What is this service?' },
         answer: { type: 'string', example: 'This is a car checker service.' },
+        category: { type: 'string', example: 'General' },
       },
     },
   })

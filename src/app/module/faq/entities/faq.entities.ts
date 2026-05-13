@@ -10,6 +10,9 @@ export class Faq {
 
   @Prop({ required: true })
   answer: string;
+
+  @Prop({ default: 'General' })
+  category: string;
 }
 
 export const FaqSchema = SchemaFactory.createForClass(Faq);
