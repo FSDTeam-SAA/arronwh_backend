@@ -19,9 +19,8 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '' })
+  @ApiPropertyOptional({ example: '' })
   @IsString()
-  @MinLength(6)
   password: string;
 
   @ApiPropertyOptional({ enum: ['user', 'admin'] })
@@ -58,6 +57,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @IsString()
+  postcode?: string;
 
   @ApiPropertyOptional({ example: '' })
   @IsOptional()

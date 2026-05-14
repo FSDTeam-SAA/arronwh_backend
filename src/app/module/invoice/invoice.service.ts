@@ -9,6 +9,7 @@ import * as puppeteer from 'puppeteer';
 
 import { Invoice, InvoiceDocument } from './entities/invoice.entity';
 import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import sendMailer from 'src/app/helpers/sendMailer';
@@ -34,6 +35,9 @@ export class InvoiceService {
 
     @InjectModel(Quote.name)
     private readonly quoteModel: Model<QuoteDocument>,
+
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -112,6 +116,37 @@ export class InvoiceService {
     throw new BadRequestException('Could not generate a unique invoice number. Please try again.');
   }
 
+  private async upsertCustomerAsUser(customerInfo: CreateInvoiceDto['customerInfo']) {
+    const email = customerInfo?.email?.trim().toLowerCase();
+    if (!email) return;
+
+    const userPayload: Partial<User> = {
+      fullName: customerInfo.name?.trim() || email,
+      email,
+      phoneNumber: customerInfo.phone,
+      address: customerInfo.address,
+      postcode: customerInfo.postcode,
+    };
+
+    Object.keys(userPayload).forEach((key) => {
+      if (userPayload[key as keyof User] === undefined || userPayload[key as keyof User] === '') {
+        delete userPayload[key as keyof User];
+      }
+    });
+
+    await this.userModel.updateOne(
+      { email },
+      {
+        $set: userPayload,
+        $setOnInsert: {
+          role: 'user',
+          status: 'active',
+        },
+      },
+      { upsert: true },
+    );
+  }
+
   // ─── CRUD ──────────────────────────────────────────────────────────────────
 
   async createInvoice(dto: CreateInvoiceDto): Promise<InvoiceDocument> {
@@ -148,6 +183,7 @@ export class InvoiceService {
 
     const email = invoice.customerInfo?.email;
     const savedInvoice = await this.saveInvoiceWithUniqueNumber(invoice);
+    await this.upsertCustomerAsUser(savedInvoice.customerInfo as CreateInvoiceDto['customerInfo']);
 
     const invoiceHtml = this.buildHtml(savedInvoice);
     const emailHtml   = invoiceEmailWrapper(invoiceHtml, savedInvoice.invoiceNumber);
