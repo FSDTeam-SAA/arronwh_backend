@@ -6,6 +6,7 @@ import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { CallbackMessageDto } from './dto/callback.dto';
+import { ManuallaySendEmailDto } from './dto/manuallay-send-email.dto';
 import { fileUpload } from 'src/app/helpers/fileUploder';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
@@ -156,6 +157,129 @@ export class SubscriberService {
         : (coupon?.value ?? 0);
 
     return Math.max(subtotal - discount, 0);
+  }
+
+  private buildManuallaySendEmailHtml(description: string, quote: any) {
+    const personal = quote.personalInfo ?? {};
+    const product = quote.productId ?? {};
+    const controller = quote.controller ?? {};
+    const extra = quote.extra ?? {};
+    const total = this.getQuoteTotal(quote);
+    const customerName = this.escapeHtml(
+      `${personal.title ?? ''} ${personal.fastName ?? ''} ${personal.sureName ?? ''}`.trim() ||
+        'Customer',
+    );
+    const customerEmail = this.escapeHtml(personal.email ?? 'N/A');
+    const customerPhone = this.escapeHtml(personal.mobleNumber ?? 'N/A');
+    const customerPostcode = this.escapeHtml(personal.postcode ?? 'N/A');
+    const productTitle = this.escapeHtml(product.title ?? 'Selected boiler');
+    const controllerTitle = this.escapeHtml(controller.title ?? 'Not selected');
+    const extraTitle = this.escapeHtml(extra.title ?? 'Not selected');
+    const installAddress = this.escapeHtml(quote.installAddress ?? 'N/A');
+    const quoteReference = this.escapeHtml(String(quote._id ?? 'N/A'));
+    const safeDescription = this.escapeHtml(description).replace(/\n/g, '<br />');
+
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>YOLO HEAT Quote Details</title>
+        <style>
+          body { margin: 0; padding: 0; background: #EAEBEC; font-family: Arial, Helvetica, sans-serif; color: #1A2E1A; }
+          .wrapper { max-width: 680px; margin: 32px auto; background: #ffffff; border: 1px solid #d6d8da; overflow: hidden; }
+          .brand { background: #EAEBEC; padding: 24px 30px; }
+          .logo { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; color: #1A2E1A; }
+          .company { margin-top: 8px; font-size: 12px; line-height: 1.6; color: #435343; }
+          .hero { background: #FBFF26; padding: 28px 30px; }
+          .hero h1 { margin: 0; font-size: 26px; line-height: 1.25; color: #1A2E1A; }
+          .hero p { margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: #263a26; }
+          .body { padding: 28px 30px 32px; }
+          .message { background: #D0E7D5; border: 1px solid #b9d2bf; padding: 18px; font-size: 15px; line-height: 1.7; color: #263a26; }
+          .section { margin-top: 22px; }
+          .section-title { margin: 0 0 10px; font-size: 15px; font-weight: 900; color: #1A2E1A; text-transform: uppercase; letter-spacing: .04em; }
+          .table { width: 100%; border-collapse: collapse; border: 1px solid #e1e5e1; }
+          .table td { padding: 12px 14px; border-bottom: 1px solid #e1e5e1; font-size: 14px; vertical-align: top; }
+          .table tr:last-child td { border-bottom: none; }
+          .label { width: 38%; color: #617064; font-weight: 700; }
+          .value { color: #1A2E1A; font-weight: 700; text-align: right; }
+          .total { margin-top: 22px; background: #1A2E1A; color: #ffffff; padding: 18px; text-align: right; }
+          .total span { display: block; font-size: 12px; color: #D0E7D5; text-transform: uppercase; letter-spacing: .06em; }
+          .total strong { display: block; margin-top: 6px; font-size: 28px; color: #FBFF26; }
+          .footer { background: #1A2E1A; color: #EAEBEC; padding: 18px 30px; text-align: center; font-size: 12px; line-height: 1.6; }
+          .footer a { color: #FBFF26; text-decoration: none; font-weight: 700; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="brand">
+            <div class="logo">■ YOLO HEAT</div>
+            <div class="company">
+              YOLO HEAT LTD · Heating & Installation Specialists<br />
+              London, United Kingdom · <a href="mailto:hello@yoloheat.co.uk" style="color:#1A2E1A;">hello@yoloheat.co.uk</a> · yoloheat.co.uk
+            </div>
+          </div>
+
+          <div class="hero">
+            <h1>Your quote details</h1>
+            <p>Here is the full quote information prepared by YOLO HEAT.</p>
+          </div>
+
+          <div class="body">
+            <div class="message">
+              Hi ${customerName},<br /><br />
+              ${safeDescription}
+            </div>
+
+            <div class="section">
+              <h2 class="section-title">Customer Information</h2>
+              <table class="table">
+                <tr><td class="label">Name</td><td class="value">${customerName}</td></tr>
+                <tr><td class="label">Email</td><td class="value">${customerEmail}</td></tr>
+                <tr><td class="label">Phone</td><td class="value">${customerPhone}</td></tr>
+                <tr><td class="label">Postcode</td><td class="value">${customerPostcode}</td></tr>
+                <tr><td class="label">Install Address</td><td class="value">${installAddress}</td></tr>
+              </table>
+            </div>
+
+            <div class="section">
+              <h2 class="section-title">Quote Selection</h2>
+              <table class="table">
+                <tr><td class="label">Quote ID</td><td class="value">${quoteReference}</td></tr>
+                <tr><td class="label">Product</td><td class="value">${productTitle}</td></tr>
+                <tr><td class="label">Product Price</td><td class="value">${this.money(product.payablePrice ?? product.price ?? 0)}</td></tr>
+                <tr><td class="label">Controller</td><td class="value">${controllerTitle}</td></tr>
+                <tr><td class="label">Controller Price</td><td class="value">${this.money(controller.price ?? 0)}</td></tr>
+                <tr><td class="label">Extra</td><td class="value">${extraTitle}</td></tr>
+                <tr><td class="label">Extra Price</td><td class="value">${this.money(extra.price ?? 0)}</td></tr>
+              </table>
+            </div>
+
+            <div class="section">
+              <h2 class="section-title">Company Information</h2>
+              <table class="table">
+                <tr><td class="label">Company</td><td class="value">YOLO HEAT LTD</td></tr>
+                <tr><td class="label">Email</td><td class="value">hello@yoloheat.co.uk</td></tr>
+                <tr><td class="label">Website</td><td class="value">yoloheat.co.uk</td></tr>
+                <tr><td class="label">Location</td><td class="value">London, United Kingdom</td></tr>
+              </table>
+            </div>
+
+            <div class="total">
+              <span>Full quote total</span>
+              <strong>${this.money(total)}</strong>
+            </div>
+          </div>
+
+          <div class="footer">
+            You are receiving this email because you requested a quote from YOLO HEAT.<br />
+            Contact us: <a href="mailto:hello@yoloheat.co.uk">hello@yoloheat.co.uk</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   private buildInvoicePdfHtml(quote: any, price?: number | string) {
@@ -416,6 +540,30 @@ export class SubscriberService {
       phoneNumber: callbackMessageDto.phoneNumber,
       reason: callbackMessageDto.reason,
       sentTo: recipient,
+    };
+  }
+
+  async manuallaySendEmail(dto: ManuallaySendEmailDto) {
+    const quote = await this.getInvoiceQuote(dto.quoteId);
+    const email = quote.personalInfo?.email;
+
+    if (!email) {
+      throw new HttpException('No email address found on this quote', 400);
+    }
+
+    const html = this.buildManuallaySendEmailHtml(dto.description, quote);
+    await sendMailer(email, 'Your YOLO HEAT quote details', html);
+
+    return {
+      quoteId: dto.quoteId,
+      sentTo: email,
+      customerName:
+        `${quote.personalInfo?.title ?? ''} ${quote.personalInfo?.fastName ?? ''} ${quote.personalInfo?.sureName ?? ''}`.trim() ||
+        'Customer',
+      total: this.getQuoteTotal(quote),
+      product: quote.productId?.title ?? null,
+      controller: quote.controller?.title ?? null,
+      extra: quote.extra?.title ?? null,
     };
   }
 
