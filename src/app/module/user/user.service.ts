@@ -29,15 +29,20 @@ export class UserService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto, file?: Express.Multer.File) {
-    const user = await this.userModel.findOne({ email: createUserDto.email });
+    const payload = Object.fromEntries(
+      Object.entries(createUserDto).filter(([, value]) => value !== undefined && value !== ''),
+    ) as CreateUserDto;
+
+    const user = await this.userModel.findOne({ email: payload.email });
     if (user) {
       throw new HttpException('User already exists', 400);
     }
     if (file) {
       const uploadedFile = await fileUpload.uploadToCloudinary(file);
-      createUserDto.profilePicture = uploadedFile.url;
+      payload.profilePicture = uploadedFile.url;
     }
-    const createdUser = await this.userModel.create(createUserDto);
+
+    const createdUser = await this.userModel.create(payload);
     return createdUser;
   }
 
