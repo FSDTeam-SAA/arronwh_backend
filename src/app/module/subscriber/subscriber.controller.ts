@@ -34,6 +34,7 @@ import { SubscriberService } from './subscriber.sevice';
 import { SendMessageDto } from './dto/send-message.dto';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { CallbackMessageDto } from './dto/callback.dto';
+import { ManuallaySendEmailDto } from './dto/manuallay-send-email.dto';
 
 @ApiTags('Subscriber')
 @Controller('subscriber')
@@ -112,6 +113,24 @@ export class SubscriberController {
 
     return {
       message: 'Callback request sent successfully',
+      data: result,
+    };
+  }
+
+  @Post('manuallay-send-email')
+  @ApiOperation({
+    summary:
+      'Manually send a full quote email to the quote customer with custom description',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiBody({ type: ManuallaySendEmailDto })
+  @HttpCode(HttpStatus.OK)
+  async manuallaySendEmail(@Body() dto: ManuallaySendEmailDto) {
+    const result = await this.subscriberService.manuallaySendEmail(dto);
+
+    return {
+      message: 'Manual quote email sent successfully',
       data: result,
     };
   }
