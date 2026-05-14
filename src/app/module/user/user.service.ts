@@ -18,6 +18,7 @@ const userSearchAbleFields = [
   'country',
   'city',
   'address',
+  'postcode',
   'status',
 ];
 

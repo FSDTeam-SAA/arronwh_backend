@@ -49,8 +49,8 @@ export function invoiceHtmlTemplate(data: {
   const sectionHeader = (label: string) => `
     <tr>
       <td colspan="4"
-          style="padding:6px 12px;background:#f0f0e8;font-size:11px;
-                 font-weight:700;letter-spacing:.06em;color:#555;text-transform:uppercase;">
+          style="padding:6px 12px;background:#fff;font-size:11px;
+                 font-weight:700;letter-spacing:.06em;color:#1A2E1A;text-transform:uppercase;">
         ${label}
       </td>
     </tr>`;
@@ -70,38 +70,35 @@ export function invoiceHtmlTemplate(data: {
     table { border-collapse: collapse; width: 100%; }
   </style>
 </head>
-<body style="padding:32px;">
+<body style="padding:0;background:#fff;">
 
   <!-- Header -->
-  <table style="margin-bottom:28px;">
+  <table style="margin-bottom:28px;background:#EAEBEC;">
     <tr>
-      <td>
-        <div style="font-size:24px;font-weight:900;letter-spacing:-1px;color:#1a2e1a;">
+      <td style="padding:24px;">
+        <div style="font-size:24px;font-weight:900;letter-spacing:-1px;color:#1A2E1A;">
           ■ YOLO HEAT
         </div>
-        <div style="font-size:11px;color:#666;margin-top:4px;">
-          London, United Kingdom · hello@yoloheat.co.uk
+        <div style="font-size:11px;color:#555;margin-top:6px;line-height:1.7;">
+          Website: yoloheat.co.uk<br/>
+          London, United Kingdom ·
+          <a href="mailto:hello@yoloheat.co.uk" style="color:#1A2E1A;text-decoration:none;">hello@yoloheat.co.uk</a>
         </div>
       </td>
-      <td style="text-align:right;">
-        <div style="font-size:20px;font-weight:700;color:#1a2e1a;">INVOICE</div>
+      <td style="padding:24px;text-align:right;">
+        <div style="font-size:20px;font-weight:700;color:#1A2E1A;">INVOICE</div>
         <div style="font-size:13px;color:#444;margin-top:4px;">${data.invoiceNumber}</div>
-        <div style="margin-top:8px;">
-          <span style="background:${data.status === 'paid' ? '#22c55e' : data.status === 'cancelled' ? '#ef4444' : '#f59e0b'};
-                       color:#fff;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;
-                       text-transform:uppercase;">
-            ${data.status}
-          </span>
-        </div>
       </td>
     </tr>
   </table>
+
+  <div style="padding:0 32px 32px;">
 
   <!-- Meta -->
   <table style="margin-bottom:24px;font-size:12px;color:#555;">
     <tr>
       <td style="width:50%;vertical-align:top;">
-        <strong style="color:#1a2e1a;">Bill To</strong><br/>
+        <strong style="color:#1A2E1A;">Bill To</strong><br/>
         <span style="font-size:14px;font-weight:600;color:#222;">${data.customerInfo.name}</span><br/>
         ${data.customerInfo.email}<br/>
         ${data.customerInfo.phone  ? data.customerInfo.phone  + '<br/>' : ''}
@@ -124,7 +121,7 @@ export function invoiceHtmlTemplate(data: {
   <!-- Line items -->
   <table style="margin-bottom:20px;border:1px solid #e8e8e0;border-radius:6px;overflow:hidden;">
     <thead>
-      <tr style="background:#1a2e1a;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">
+      <tr style="background:#FBFF26;color:#1A2E1A;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">
         <th style="padding:10px 12px;text-align:left;">Description</th>
         <th style="padding:10px 12px;text-align:center;">Qty</th>
         <th style="padding:10px 12px;text-align:right;">Unit Price</th>
@@ -153,7 +150,7 @@ export function invoiceHtmlTemplate(data: {
       <td style="padding:4px 0;color:#666;">VAT (${data.vatRate}%)</td>
       <td style="padding:4px 0;text-align:right;">${fmt(data.vatAmount)}</td>
     </tr>
-    <tr style="border-top:2px solid #1a2e1a;font-weight:700;font-size:15px;">
+    <tr style="border-top:2px solid #1A2E1A;font-weight:700;font-size:15px;">
       <td style="padding:8px 0 0;">Total</td>
       <td style="padding:8px 0 0;text-align:right;">${fmt(data.total)}</td>
     </tr>
@@ -164,6 +161,8 @@ export function invoiceHtmlTemplate(data: {
   <div style="border-top:1px solid #e8e8e0;padding-top:14px;font-size:12px;color:#666;">
     <strong style="color:#333;">Notes:</strong><br/>${data.notes}
   </div>` : ''}
+
+  </div>
 
 </body>
 </html>`;
