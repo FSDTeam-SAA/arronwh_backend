@@ -16,6 +16,7 @@ import { Product, ProductDocument } from '../product/entitiy/product.entitiy';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
 import * as puppeteer from 'puppeteer';
+import { User, UserDocument } from '../user/entities/user.entity';
 
 @Injectable()
 export class QuoteService {
@@ -28,6 +29,8 @@ export class QuoteService {
     private readonly controllerModel: Model<BoilerControllerDocument>,
     @InjectModel(Extra.name)
     private readonly extraModel: Model<ExtraDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
@@ -89,6 +92,46 @@ export class QuoteService {
         productId: productId ?? null,
         quizAnswers: quizAnswers ?? [],
       });
+
+      if (personalInfo) {
+        const userExist = await this.userModel.findOne({
+          email: personalInfo.email,
+        });
+        if (!userExist) {
+          const { fastName, sureName, title, ...rest } = personalInfo;
+          await this.userModel.create(
+            [
+              {
+                fullName: title
+                  ? title + ' ' + fastName + ' ' + sureName
+                  : fastName + ' ' + sureName,
+                email: personalInfo.email,
+                phoneNumber: personalInfo.mobleNumber,
+                postcode: personalInfo.postcode,
+              },
+            ],
+            { session },
+          );
+        }
+
+        await this.userModel.updateOne(
+          { email: personalInfo.email },
+          {
+            $set: {
+              fullName: personalInfo.title
+                ? personalInfo.title +
+                  ' ' +
+                  personalInfo.fastName +
+                  ' ' +
+                  personalInfo.sureName
+                : personalInfo.fastName + ' ' + personalInfo.sureName,
+              phoneNumber: personalInfo.mobleNumber,
+              postcode: personalInfo.postcode,
+            },
+          },
+          { session },
+        );
+      }
 
       await newQuote.save({ session });
       await session.commitTransaction();
@@ -255,25 +298,29 @@ export class QuoteService {
     return { message: 'Quote emailed successfully', sentTo: email };
   }
 
-  async downloadQuote(quoteId: string, price?: number | string, url?: string): Promise<Buffer> {
-  const quote = await this.quoteModel
-    .findById(quoteId)
-    .populate('productId', 'title price payablePrice monthlyPrice')
-    .populate('controller', 'title price')
-    .populate('extra', 'title price')
-    .lean();
-  if (!quote) throw new HttpException('Quote not found', 404);
+  async downloadQuote(
+    quoteId: string,
+    price?: number | string,
+    url?: string,
+  ): Promise<Buffer> {
+    const quote = await this.quoteModel
+      .findById(quoteId)
+      .populate('productId', 'title price payablePrice monthlyPrice')
+      .populate('controller', 'title price')
+      .populate('extra', 'title price')
+      .lean();
+    if (!quote) throw new HttpException('Quote not found', 404);
 
-  const parsedPrice = this.parsePrice(price);
-  const parsedUrl = this.parseUrl(url);
-  const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
+    const parsedPrice = this.parsePrice(price);
+    const parsedUrl = this.parseUrl(url);
+    const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
-  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-  await browser.close();
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
 
-  return Buffer.from(pdfBuffer);
-}
+    return Buffer.from(pdfBuffer);
+  }
 }
