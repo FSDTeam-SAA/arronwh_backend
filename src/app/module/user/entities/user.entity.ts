@@ -21,8 +21,8 @@ export class User {
   email: string;
 
   @Prop({
-    required: [true, 'Password is required'],
-    minlength: 6,
+    // required: [true, 'Password is required'],
+    // minlength: 6,
     select: false,
   })
   password: string;
@@ -33,7 +33,9 @@ export class User {
   })
   role: string;
 
-  @Prop({ enum: ['male', 'female'] })
+  @Prop({ enum: ['male', 'female'],
+    default: 'male',
+   })
   gender: string;
 
   @Prop()
@@ -47,6 +49,9 @@ export class User {
 
   @Prop()
   address: string;
+
+  @Prop()
+  postcode: string;
 
   @Prop()
   profilePicture: string;
