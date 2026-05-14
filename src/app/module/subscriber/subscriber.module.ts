@@ -10,6 +10,7 @@ import {
   BoilerControllerSchema,
 } from '../controller/entities/controller.entities';
 import { Extra, ExtraSchema } from '../extra/entities/extra.entities';
+import { User, UserSchema } from '../user/entities/user.entity';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { Extra, ExtraSchema } from '../extra/entities/extra.entities';
       { name: Product.name, schema: ProductSchema },
       { name: BoilerController.name, schema: BoilerControllerSchema },
       { name: Extra.name, schema: ExtraSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [SubscriberController],

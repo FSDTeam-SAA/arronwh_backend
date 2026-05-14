@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Subscriber, SubscriberDocument } from './entities/subscriber.entity';
 import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { User, UserDocument } from '../user/entities/user.entity';
 import { UpdateSubscriberDto } from './dto/update-subscriber.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { CallbackMessageDto } from './dto/callback.dto';
@@ -26,6 +27,9 @@ export class SubscriberService {
 
     @InjectModel(Quote.name)
     private readonly quoteModel: Model<QuoteDocument>,
+
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   private escapeHtml(value = '') {
@@ -449,7 +453,7 @@ export class SubscriberService {
     return { synced, skipped };
   }
 
-  // ─── Send message + optional attachment to ALL active subscribers ──────────
+  // ─── Send message + optional attachment to all non-admin customers ─────────
   async sendMessageToAll(
     sendMessageDto: SendMessageDto,
     file?: Express.Multer.File,
@@ -461,21 +465,20 @@ export class SubscriberService {
       sendMessageDto.attachmentPublicId = uploaded.public_id;
     }
 
-    // 2. Fetch all active subscribers
-    const activeSubscribers = await this.subscriberModel.find({
-      status: 'active',
+    // 2. Fetch all customer users except admins
+    const customers = await this.userModel.find({
+      role: { $ne: 'admin' },
+      email: { $exists: true, $ne: '' },
     });
 
-    if (!activeSubscribers.length) {
-      throw new HttpException('No active subscribers found', 404);
+    if (!customers.length) {
+      throw new HttpException('No customer users found', 404);
     }
 
-    // 3. Send email to each subscriber individually
+    // 3. Send email to each customer individually
     const results = await Promise.allSettled(
-      activeSubscribers.map((subscriber) => {
-        const displayName =
-          `${subscriber.title ?? ''} ${subscriber.firstName ?? ''} ${subscriber.sureName ?? ''}`.trim() ||
-          subscriber.email;
+      customers.map((customer) => {
+        const displayName = customer.fullName?.trim() || customer.email;
 
         // const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
         const html = buildEmailHtml(
@@ -484,33 +487,21 @@ export class SubscriberService {
           sendMessageDto.attachmentUrl,
         );
 
-        return sendMailer(subscriber.email, sendMessageDto.subject, html);
+        return sendMailer(customer.email, sendMessageDto.subject, html);
       }),
     );
 
-    // 4. Persist the last sent message + attachment on each subscriber record
-    await this.subscriberModel.updateMany(
-      { status: 'active' },
-      {
-        $set: {
-          message: sendMessageDto.message,
-          attachmentUrl: sendMessageDto.attachmentUrl,
-          attachmentPublicId: sendMessageDto.attachmentPublicId,
-        },
-      },
-    );
-
-    // 5. Collect delivery report
+    // 4. Collect delivery report
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results
       .filter((r) => r.status === 'rejected')
       .map((r, i) => ({
-        email: activeSubscribers[i].email,
+        email: customers[i].email,
         reason: (r as PromiseRejectedResult).reason?.message ?? 'Unknown error',
       }));
 
     return {
-      total: activeSubscribers.length,
+      total: customers.length,
       succeeded,
       failedCount: failed.length,
       failed,
