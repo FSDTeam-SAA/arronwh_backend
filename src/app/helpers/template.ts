@@ -195,9 +195,25 @@ function customerEmail({
 
 export const buildFollowUpEmail = (
   name: string,
-  price: string,
-  code: string
+  quoteTotal: number,
+  isFinalReminder = false,
 ): string => {
+  const money = (value: number) =>
+    `£${Number(value || 0).toLocaleString('en-GB', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const heading = isFinalReminder
+    ? 'Last reminder - your quote is ready'
+    : 'Your quote is saved';
+
+  const intro = isFinalReminder
+    ? 'We noticed you have not completed your booking yet. Your boiler quote is still ready, and you can finish the booking whenever you are ready.'
+    : 'Thanks for requesting your YOLO HEAT quote. We noticed the booking has not been completed yet, so we saved it for you.';
+  const price = money(quoteTotal);
+  const code = '';
+
   return `
   <!DOCTYPE html>
   <html lang="en">
@@ -206,60 +222,84 @@ export const buildFollowUpEmail = (
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>YOLO HEAT</title>
     <style>
-      body { margin: 0; padding: 0; background: #f3f5f8; font-family: Arial, sans-serif; }
-      .wrapper { max-width: 620px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #dde5ee; box-shadow: 0 8px 24px rgba(17, 46, 82, 0.08); }
+      body { margin: 0; padding: 0; background: #EAEBEC; font-family: Arial, sans-serif; }
+      .wrapper { max-width: 620px; margin: 40px auto; background: #ffffff; overflow: hidden; border: 1px solid #d6d8da; }
       
-      .brand { background: #e8ff00; padding: 18px 28px; color: #102f52; font-size: 14px; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; }
+      .brand { background: #EAEBEC; padding: 22px 30px; color: #1A2E1A; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+      .brand-meta { color: #4b5a4d; font-size: 12px; font-weight: 400; line-height: 1.6; margin-top: 6px; letter-spacing: 0; }
       
-      .header { background: #dfe7ef; padding: 28px 32px; border-bottom: 4px solid #e8ff00; }
-      .header h1 { color: #102f52; margin: 0; font-size: 28px; font-weight: 800; }
-      .header p { color: #354a60; margin: 10px 0 0; font-size: 15px; }
+      .header { background: #FBFF26; padding: 26px 30px; }
+      .header h1 { color: #1A2E1A; margin: 0; font-size: 26px; font-weight: 900; }
+      .header p { display: none; }
+      .header .subtitle { color: #243824; margin: 10px 0 0; font-size: 14px; line-height: 1.6; }
 
-      .body { padding: 28px 32px 32px; color: #102f52; }
+      .body { padding: 28px 30px 32px; color: #1A2E1A; }
       
-      .message-card { background: #f7f9fb; border: 1px solid #dde5ee; border-radius: 10px; padding: 22px; }
+      .message-card { background: #D0E7D5; border: 1px solid #b9d2bf; padding: 22px; }
 
       .greeting { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
 
-      .message { font-size: 15px; line-height: 1.7; color: #354a60; }
+      .message { display: none; }
+      .follow-message { font-size: 15px; line-height: 1.7; color: #263a26; }
 
-      .highlight {
-        display: inline-block;
-        background: #e8ff00;
-        color: #102f52;
-        font-weight: 800;
-        padding: 6px 10px;
-        border-radius: 6px;
-        margin: 6px 0;
+      .total-box {
+        background: #ffffff;
+        border: 1px solid #b9d2bf;
+        margin: 20px 0;
+        padding: 16px;
+      }
+
+      .total-label {
+        color: #617064;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+      }
+
+      .total-value {
+        color: #1A2E1A;
+        font-size: 28px;
+        font-weight: 900;
+        margin-top: 6px;
       }
 
       .cta {
-        display: inline-block;
+        display: none;
         margin-top: 20px;
-        background: #102f52;
+        background: #1A2E1A;
         color: #ffffff !important;
         padding: 12px 20px;
-        border-radius: 8px;
         text-decoration: none;
-        font-weight: 700;
+        font-weight: 800;
       }
 
-      .cta:hover {
-        background: #0c2440;
+      .primary-cta {
+        display: inline-block;
+        margin-top: 20px;
+        background: #1A2E1A;
+        color: #ffffff !important;
+        padding: 12px 20px;
+        text-decoration: none;
+        font-weight: 800;
       }
 
-      .footer { background: #102f52; padding: 18px 32px; text-align: center; font-size: 12px; color: #dfe7ef; }
-      .footer strong { color: #e8ff00; }
+      .footer { background: #1A2E1A; padding: 18px 30px; text-align: center; font-size: 12px; color: #EAEBEC; }
+      .footer strong { color: #FBFF26; }
     </style>
   </head>
 
   <body>
     <div class="wrapper">
       
-      <div class="brand">YOLO HEAT</div>
+      <div class="brand">
+        ■ YOLO HEAT
+        <div class="brand-meta">London, United Kingdom · hello@yoloheat.co.uk</div>
+      </div>
 
       <div class="header">
-        <h1>No Worries. We've Got You.</h1>
+        <h1>${heading}</h1>
+        <div class="subtitle">Your installation quote total is shown below.</div>
         <p>Your quote is about to expire — don’t miss this.</p>
       </div>
 
@@ -267,6 +307,22 @@ export const buildFollowUpEmail = (
         <div class="message-card">
           
           <div class="greeting">Hey ${name},</div>
+
+          <div class="follow-message">
+            ${intro}<br/><br/>
+            This is the full price from the quote you filled out.
+          </div>
+
+          <div class="total-box">
+            <div class="total-label">Full quote price</div>
+            <div class="total-value">${money(quoteTotal)}</div>
+          </div>
+
+          <div class="follow-message">
+            If you would like to continue, click below and complete your booking.
+          </div>
+
+          <a href="https://arronwh-website.vercel.app/boilers/property-overview" class="primary-cta">Complete your booking</a>
 
           <div class="message">
             🥁... your quotes expire <strong>tonight</strong>.<br/><br/>
