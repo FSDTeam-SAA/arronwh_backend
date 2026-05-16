@@ -60,15 +60,18 @@ export const quoteEmailTemplate = (
 
   const calculatedTotal = Math.max(subtotal - couponDiscount, 0);
 
-  const savedQuotePrice =
-    typeof quote.quotePrice === 'number' && !Number.isNaN(quote.quotePrice)
-      ? quote.quotePrice
-      : undefined;
-
   const finalTotal =
-    typeof price === 'number' && !Number.isNaN(price)
-      ? price
-      : (savedQuotePrice ?? calculatedTotal);
+    typeof price === 'number' && !Number.isNaN(price) ? price : calculatedTotal;
+
+  // const savedQuotePrice =
+  //   typeof quote.quotePrice === 'number' && !Number.isNaN(quote.quotePrice)
+  //     ? quote.quotePrice
+  //     : undefined;
+
+  // const finalTotal =
+  //   typeof price === 'number' && !Number.isNaN(price)
+  //     ? price
+  //     : (savedQuotePrice ?? calculatedTotal);
 
   const resolvedViewQuoteUrl =
     normalizeExternalUrl(url) || normalizeExternalUrl(quote.viewQuoteUrl) || '#';
