@@ -32,12 +32,12 @@ export class QuoteCronService {
   }
 
   private calculateQuoteTotal(quote: any): number {
-    if (
-      typeof quote.quotePrice === 'number' &&
-      Number.isFinite(quote.quotePrice)
-    ) {
-      return quote.quotePrice;
-    }
+    // if (
+    //   typeof quote.quotePrice === 'number' &&
+    //   Number.isFinite(quote.quotePrice)
+    // ) {
+    //   return quote.quotePrice;
+    // }
 
     const product = quote.productId ?? {};
     const controller = quote.controller ?? {};
@@ -46,15 +46,17 @@ export class QuoteCronService {
     const productPrice = product.payablePrice ?? product.price ?? 0;
     const controllerPrice = controller.price ?? 0;
     const extraPrice = extra.price ?? 0;
-    const subtotal = productPrice + controllerPrice + extraPrice;
 
-    const coupon = quote.coupon ?? null;
-    const couponDiscount =
-      coupon?.type === 'percentage'
-        ? Math.round((subtotal * coupon.value) / 100)
-        : (coupon?.value ?? 0);
+     return productPrice + controllerPrice + extraPrice;
+    // const subtotal = productPrice + controllerPrice + extraPrice;
 
-    return Math.max(subtotal - couponDiscount, 0);
+    // const coupon = quote.coupon ?? null;
+    // const couponDiscount =
+    //   coupon?.type === 'percentage'
+    //     ? Math.round((subtotal * coupon.value) / 100)
+    //     : (coupon?.value ?? 0);
+
+    // return Math.max(subtotal - couponDiscount, 0);
   }
 
   private getCustomerName(quote: any): string {
