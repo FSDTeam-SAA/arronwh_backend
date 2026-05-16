@@ -291,19 +291,19 @@ export class QuoteService {
     const parsedPrice = this.parsePrice(price);
     const parsedUrl = this.parseUrl(url);
 
-    if (parsedPrice !== undefined || parsedUrl !== undefined) {
-      const updateData: Record<string, number | string> = {};
-      if (parsedPrice !== undefined) {
-        updateData.quotePrice = parsedPrice;
-        (quote as any).quotePrice = parsedPrice;
-      }
-      if (parsedUrl !== undefined) {
-        updateData.viewQuoteUrl = parsedUrl;
-        (quote as any).viewQuoteUrl = parsedUrl;
-      }
+    // if (parsedPrice !== undefined || parsedUrl !== undefined) {
+    //   const updateData: Record<string, number | string> = {};
+    //   if (parsedPrice !== undefined) {
+    //     updateData.quotePrice = parsedPrice;
+    //     (quote as any).quotePrice = parsedPrice;
+    //   }
+    //   if (parsedUrl !== undefined) {
+    //     updateData.viewQuoteUrl = parsedUrl;
+    //     (quote as any).viewQuoteUrl = parsedUrl;
+    //   }
 
-      await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
-    }
+    //   await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
+    // }
 
     const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
@@ -327,20 +327,20 @@ export class QuoteService {
 
     const parsedPrice = this.parsePrice(price);
     const parsedUrl = this.parseUrl(url);
-    if (parsedPrice !== undefined) {
-      (quote as any).quotePrice = parsedPrice;
-    }
-    if (parsedUrl !== undefined) {
-      (quote as any).viewQuoteUrl = parsedUrl;
-    }
+    // if (parsedPrice !== undefined) {
+    //   (quote as any).quotePrice = parsedPrice;
+    // }
+    // if (parsedUrl !== undefined) {
+    //   (quote as any).viewQuoteUrl = parsedUrl;
+    // }
 
-    if (parsedPrice !== undefined || parsedUrl !== undefined) {
-      const updateData: Record<string, number | string> = {};
-      if (parsedPrice !== undefined) updateData.quotePrice = parsedPrice;
-      if (parsedUrl !== undefined) updateData.viewQuoteUrl = parsedUrl;
+    // if (parsedPrice !== undefined || parsedUrl !== undefined) {
+    //   const updateData: Record<string, number | string> = {};
+    //   if (parsedPrice !== undefined) updateData.quotePrice = parsedPrice;
+    //   if (parsedUrl !== undefined) updateData.viewQuoteUrl = parsedUrl;
 
-      await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
-    }
+    //   await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
+    // }
 
     const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
