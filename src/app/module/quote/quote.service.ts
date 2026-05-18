@@ -312,44 +312,33 @@ export class QuoteService {
     return { message: 'Quote emailed successfully', sentTo: email };
   }
 
-  async downloadQuote(
-    quoteId: string,
-    price?: number | string,
-    url?: string,
-  ): Promise<Buffer> {
-    const quote = await this.quoteModel
-      .findById(quoteId)
-      .populate('productId', 'title price payablePrice monthlyPrice')
-      .populate('controller', 'title price')
-      .populate('extra', 'title price')
-      .lean();
-    if (!quote) throw new HttpException('Quote not found', 404);
+  async downloadQuote(quoteId: string, price?: number | string, url?: string): Promise<Buffer> {
+  const quote = await this.quoteModel
+    .findById(quoteId)
+    .populate('productId', 'title price payablePrice monthlyPrice')
+    .populate('controller', 'title price')
+    .populate('extra', 'title price')
+    .lean();
+  if (!quote) throw new HttpException('Quote not found', 404);
 
-    const parsedPrice = this.parsePrice(price);
-    const parsedUrl = this.parseUrl(url);
-    // if (parsedPrice !== undefined) {
-    //   (quote as any).quotePrice = parsedPrice;
-    // }
-    // if (parsedUrl !== undefined) {
-    //   (quote as any).viewQuoteUrl = parsedUrl;
-    // }
+  const parsedPrice = this.parsePrice(price);
+  const parsedUrl = this.parseUrl(url);
+  const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
-    // if (parsedPrice !== undefined || parsedUrl !== undefined) {
-    //   const updateData: Record<string, number | string> = {};
-    //   if (parsedPrice !== undefined) updateData.quotePrice = parsedPrice;
-    //   if (parsedUrl !== undefined) updateData.viewQuoteUrl = parsedUrl;
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    ]
+  });
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'networkidle0' });
+  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+  await browser.close();
 
-    //   await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
-    // }
-
-    const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
-
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
-
-    return Buffer.from(pdfBuffer);
-  }
+  return Buffer.from(pdfBuffer);
+}
 }
