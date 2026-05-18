@@ -29,6 +29,7 @@ import { AboutusModule } from './app/module/aboutus/aboutus.module';
 import { InvoiceModule } from './app/module/invoice/invoice.module';
 import { ValuesModule } from './app/module/values/values.module';
 import { LogoModule } from './app/module/logo/logo.module';
+import { IssueModule } from './app/module/issue/issue.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { LogoModule } from './app/module/logo/logo.module';
     InvoiceModule,
     ValuesModule,
     LogoModule,
+    IssueModule,
   ],
 
   controllers: [AppController],
