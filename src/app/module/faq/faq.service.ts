@@ -43,7 +43,6 @@ export class FaqService {
       .find(whereConditions)
       .skip(skip)
       .limit(limit)
-      .sort({ [sortBy]: sortOrder } as any);
 
     return {
       meta: { page, limit, total },
