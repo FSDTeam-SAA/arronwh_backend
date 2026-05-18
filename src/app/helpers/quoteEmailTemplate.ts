@@ -186,22 +186,20 @@ export const quoteEmailTemplate = (
             <tr>
               <td align="center" style="padding: 26px 20px 14px">
                 <div>
-                  <div
+                  <img
+                    src="https://res.cloudinary.com/dlpdumtua/image/upload/v1779001388/healthcare_app/w5awhfm1qwkvmbcenaif.png"
+                    alt="Yelo Heat"
+                    width="230"
                     style="
                       display: inline-block;
-                      background-color: #ffde59;
-                      padding: 14px 32px;
-                      font-size: 20px;
-                      letter-spacing: 6px;
-                      font-weight: 600;
-                      border-radius: 4px;
-                      color: #000;
-                      font-family:
-                        &quot;Helvetica Neue&quot;, Arial, sans-serif;
+                      width: 230px;
+                      max-width: 100%;
+                      height: auto;
+                      border: 0;
+                      outline: none;
+                      text-decoration: none;
                     "
-                  >
-                    YOLO HEAT
-                  </div>
+                  />
                 </div>
               </td>
             </tr>
@@ -942,22 +940,20 @@ export const quoteEmailTemplate = (
             <tr>
               <td style="background: #eef1f4; padding: 32px 26px">
                 <div>
-                  <div
+                  <img
+                    src="https://res.cloudinary.com/dlpdumtua/image/upload/v1779001388/healthcare_app/w5awhfm1qwkvmbcenaif.png"
+                    alt="Yelo Heat"
+                    width="230"
                     style="
                       display: inline-block;
-                      background-color: #ffde59;
-                      padding: 14px 32px;
-                      font-size: 20px;
-                      letter-spacing: 6px;
-                      font-weight: 600;
-                      border-radius: 4px;
-                      color: #000;
-                      font-family:
-                        &quot;Helvetica Neue&quot;, Arial, sans-serif;
+                      width: 230px;
+                      max-width: 100%;
+                      height: auto;
+                      border: 0;
+                      outline: none;
+                      text-decoration: none;
                     "
-                  >
-                    YOLO HEAT
-                  </div>
+                  />
                 </div>
 
                 <p
