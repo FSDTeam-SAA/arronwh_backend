@@ -27,6 +27,8 @@ import { TermsconditionsModule } from './app/module/termsconditions/termsconditi
 import { SubscriberModule } from './app/module/subscriber/subscriber.module';
 import { AboutusModule } from './app/module/aboutus/aboutus.module';
 import { InvoiceModule } from './app/module/invoice/invoice.module';
+import { ValuesModule } from './app/module/values/values.module';
+import { LogoModule } from './app/module/logo/logo.module';
 
 @Module({
   imports: [
@@ -55,6 +57,8 @@ import { InvoiceModule } from './app/module/invoice/invoice.module';
     SubscriberModule,
     AboutusModule,
     InvoiceModule,
+    ValuesModule,
+    LogoModule,
   ],
 
   controllers: [AppController],
