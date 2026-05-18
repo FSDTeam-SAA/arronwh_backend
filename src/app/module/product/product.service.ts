@@ -292,8 +292,16 @@ export class ProductService {
   if (payload.badges !== undefined) updateData.badges = this.normalizeStringArray(payload.badges);
   if (payload.price !== undefined) updateData.price = this.normalizeNumber(payload.price);
   if (payload.discountPrice !== undefined) updateData.discountPrice = this.normalizeNumber(payload.discountPrice);
-  if (payload.payablePrice !== undefined) updateData.payablePrice = this.normalizeNumber(payload.payablePrice);
   if (payload.monthlyPrice !== undefined) updateData.monthlyPrice = this.normalizeNumber(payload.monthlyPrice);
+
+  
+  // const payablePrice = payload.price && payload.discountPrice ? payload.price - payload.discountPrice : undefined;
+  // const monthlyPrice = payablePrice ? parseFloat((payablePrice / 12).toFixed(2)) : undefined;
+  const payablePrice = updateData.price && updateData.discountPrice ? (updateData.price as number) - (updateData.discountPrice as number) : undefined;
+  if (payablePrice !== undefined) updateData.payablePrice = payablePrice;
+
+  const monthlyPrice = payablePrice ? parseFloat((payablePrice / 12).toFixed(2)) : undefined;
+  if (monthlyPrice !== undefined) updateData.monthlyPrice = monthlyPrice;
 
   if (Array.isArray(payload.boilerFeatures)) {
     updateData.boilerFeatures = payload.boilerFeatures
