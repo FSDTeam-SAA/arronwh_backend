@@ -268,7 +268,15 @@ export class QuoteService {
   const parsedUrl = this.parseUrl(url);
   const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 
-  const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    ]
+  });
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'networkidle0' });
   const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
