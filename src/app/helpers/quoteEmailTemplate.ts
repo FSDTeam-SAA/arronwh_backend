@@ -2,7 +2,7 @@ export const quoteEmailTemplate = (
   quote: any,
   price?: number,
   url?: string,
-  apiBaseUrl: string = 'http://localhost:5001/api/v1',
+  apiBaseUrl: string = 'https://api.yoloheat.com/api/v1',
 ): string => {
   const personal = quote.personalInfo ?? {};
   const product = quote.productId ?? {};
