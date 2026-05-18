@@ -70,6 +70,12 @@ export class Quote {
   status: string;
   enum: ['pending', 'accepted', 'rejected'];
 
+  // @Prop()
+  // quotePrice?: number;
+
+  // @Prop()
+  // viewQuoteUrl?: string;
+
   @Prop({
     type: {
       deposit: { type: Number },

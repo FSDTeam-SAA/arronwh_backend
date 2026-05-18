@@ -142,6 +142,19 @@ export class CreateQuoteDto {
   @IsString()
   status?: string;
 
+  // @ApiPropertyOptional({ example: 2499.99 })
+  // @IsOptional()
+  // @IsNumber()
+  // @Min(0)
+  // quotePrice?: number;
+
+  // @ApiPropertyOptional({
+  //   example: 'https://arronwh.com/boilers/system-selection/product-details?quoteId=123',
+  // })
+  // @IsOptional()
+  // @IsString()
+  // viewQuoteUrl?: string;
+
   @ApiPropertyOptional({ type: PayMounthlyDataDto })
   @ValidateIf((o) => o.payMounthly === true)
   @IsOptional()

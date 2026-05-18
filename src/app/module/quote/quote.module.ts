@@ -12,6 +12,7 @@ import { Extra, ExtraSchema } from '../extra/entities/extra.entities';
 import { Product, ProductSchema } from '../product/entitiy/product.entitiy';
 import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
 import { QuoteCronService } from './quote.cron.service';
+import { User, UserSchema } from '../user/entities/user.entity';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { QuoteCronService } from './quote.cron.service';
       { name: Product.name, schema: ProductSchema },
       { name: BoilerController.name, schema: BoilerControllerSchema },
       { name: Extra.name, schema: ExtraSchema },
-      { name: Payment.name, schema: PaymentSchema }, // <-- add this
+      { name: Payment.name, schema: PaymentSchema },
+      {name: User.name, schema: UserSchema}
     ]),
   ],
   controllers: [QuoteController],
