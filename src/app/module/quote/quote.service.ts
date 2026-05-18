@@ -16,6 +16,7 @@ import { Product, ProductDocument } from '../product/entitiy/product.entitiy';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
 import * as puppeteer from 'puppeteer';
+import { User, UserDocument } from '../user/entities/user.entity';
 
 @Injectable()
 export class QuoteService {
@@ -28,6 +29,8 @@ export class QuoteService {
     private readonly controllerModel: Model<BoilerControllerDocument>,
     @InjectModel(Extra.name)
     private readonly extraModel: Model<ExtraDocument>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
@@ -89,6 +92,46 @@ export class QuoteService {
         productId: productId ?? null,
         quizAnswers: quizAnswers ?? [],
       });
+
+      if (personalInfo) {
+        const userExist = await this.userModel.findOne({
+          email: personalInfo.email,
+        });
+        if (!userExist) {
+          const { fastName, sureName, title, ...rest } = personalInfo;
+          await this.userModel.create(
+            [
+              {
+                fullName: title
+                  ? title + ' ' + fastName + ' ' + sureName
+                  : fastName + ' ' + sureName,
+                email: personalInfo.email,
+                phoneNumber: personalInfo.mobleNumber,
+                postcode: personalInfo.postcode,
+              },
+            ],
+            { session },
+          );
+        }
+
+        await this.userModel.updateOne(
+          { email: personalInfo.email },
+          {
+            $set: {
+              fullName: personalInfo.title
+                ? personalInfo.title +
+                  ' ' +
+                  personalInfo.fastName +
+                  ' ' +
+                  personalInfo.sureName
+                : personalInfo.fastName + ' ' + personalInfo.sureName,
+              phoneNumber: personalInfo.mobleNumber,
+              postcode: personalInfo.postcode,
+            },
+          },
+          { session },
+        );
+      }
 
       await newQuote.save({ session });
       await session.commitTransaction();
@@ -247,6 +290,20 @@ export class QuoteService {
 
     const parsedPrice = this.parsePrice(price);
     const parsedUrl = this.parseUrl(url);
+
+    // if (parsedPrice !== undefined || parsedUrl !== undefined) {
+    //   const updateData: Record<string, number | string> = {};
+    //   if (parsedPrice !== undefined) {
+    //     updateData.quotePrice = parsedPrice;
+    //     (quote as any).quotePrice = parsedPrice;
+    //   }
+    //   if (parsedUrl !== undefined) {
+    //     updateData.viewQuoteUrl = parsedUrl;
+    //     (quote as any).viewQuoteUrl = parsedUrl;
+    //   }
+
+    //   await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
+    // }
 
     const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
 

@@ -63,6 +63,16 @@ export const quoteEmailTemplate = (
   const finalTotal =
     typeof price === 'number' && !Number.isNaN(price) ? price : calculatedTotal;
 
+  // const savedQuotePrice =
+  //   typeof quote.quotePrice === 'number' && !Number.isNaN(quote.quotePrice)
+  //     ? quote.quotePrice
+  //     : undefined;
+
+  // const finalTotal =
+  //   typeof price === 'number' && !Number.isNaN(price)
+  //     ? price
+  //     : (savedQuotePrice ?? calculatedTotal);
+
   const resolvedViewQuoteUrl =
     normalizeExternalUrl(url) || normalizeExternalUrl(quote.viewQuoteUrl) || '#';
   const viewQuoteUrl =
