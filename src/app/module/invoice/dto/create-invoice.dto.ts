@@ -116,12 +116,6 @@ export class CreateInvoiceDto {
   @Type(() => InvoiceExtraItemDto)
   extras?: InvoiceExtraItemDto[];
 
-  @ApiPropertyOptional({ example: 20, description: 'VAT rate as a percentage' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  vatRate?: number;
-
   @ApiPropertyOptional({ example: 'pending', enum: ['pending', 'paid', 'cancelled', 'refunded'] })
   @IsOptional()
   @IsString()

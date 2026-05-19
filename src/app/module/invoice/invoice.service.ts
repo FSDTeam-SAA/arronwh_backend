@@ -49,18 +49,16 @@ export class InvoiceService {
   private computeTotals(
     boilers:     BoilerItem[],
     controllers: ControllerItem[],
-    extras:      ExtraItem[],
-    vatRate:     number,
+    extras:      ExtraItem[]
   ) {
     const boilerTotal     = boilers.reduce((s, i) => s + i.price * i.numberOfBoiler, 0);
     const controllerTotal = controllers.reduce((s, i) => s + i.price * i.numberOfControllers, 0);
     const extraTotal      = extras.reduce((s, i) => s + i.price * i.numberOfExtra, 0);
 
     const subtotal  = boilerTotal + controllerTotal + extraTotal;
-    const vatAmount = parseFloat(((subtotal * vatRate) / 100).toFixed(2));
-    const total     = parseFloat((subtotal + vatAmount).toFixed(2));
+    const total     = subtotal; // No discounts implemented yet
 
-    return { subtotal, vatAmount, total };
+    return { subtotal, total };
   }
 
   /** Render the invoice as an HTML string */
@@ -72,9 +70,6 @@ export class InvoiceService {
       boilers:       invoice.boilers       ?? [],
       controllers:   invoice.controllers   ?? [],
       extras:        invoice.extras        ?? [],
-      subtotal:      invoice.subtotal,
-      vatRate:       invoice.vatRate,
-      vatAmount:     invoice.vatAmount,
       totalDiscount: invoice.totalDiscount ?? 0,
       total:         invoice.total,
       dueDate:       invoice.dueDate,
@@ -154,7 +149,6 @@ export class InvoiceService {
       boilers     = [],
       controllers = [],
       extras      = [],
-      vatRate     = 20,
       ...rest
     } = dto;
 
@@ -163,11 +157,10 @@ export class InvoiceService {
     //   if (!exists) throw new BadRequestException(`Quote with id ${quoteId} not found.`);
     // }
 
-    const { subtotal, vatAmount, total } = this.computeTotals(
+    const { subtotal, total } = this.computeTotals(
       boilers     as BoilerItem[],
       controllers as ControllerItem[],
-      extras      as ExtraItem[],
-      vatRate,
+      extras      as ExtraItem[]
     );
 
     const invoice = new this.invoiceModel({
@@ -175,9 +168,7 @@ export class InvoiceService {
       boilers,
       controllers,
       extras,
-      vatRate,
       subtotal,
-      vatAmount,
       total,
     });
 
@@ -219,7 +210,7 @@ export class InvoiceService {
       ? [{ name: quote.extra.title, numberOfExtra: 1, price: quote.extra.price ?? 0 }]
       : [];
 
-    const { subtotal, vatAmount, total } = this.computeTotals(boilers, controllers, extras, 20);
+    const { subtotal, total } = this.computeTotals(boilers, controllers, extras);
 
     const invoice = new this.invoiceModel({
       quoteId: quote._id,
@@ -234,7 +225,6 @@ export class InvoiceService {
       extras,
       vatRate: 20,
       subtotal,
-      vatAmount,
       total,
       status: 'pending',
     });
