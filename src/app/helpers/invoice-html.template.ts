@@ -5,9 +5,6 @@ export function invoiceHtmlTemplate(data: {
   boilers:     { name: string; numberOfBoiler: number;      price: number }[];
   controllers: { name: string; numberOfControllers: number; price: number }[];
   extras:      { name: string; numberOfExtra: number;       price: number }[];
-  subtotal: number;
-  vatRate: number;
-  vatAmount: number;
   totalDiscount?: number;
   total: number;
   dueDate?: Date | string;
@@ -137,19 +134,11 @@ export function invoiceHtmlTemplate(data: {
 
   <!-- Totals -->
   <table style="margin-left:auto;width:260px;font-size:13px;margin-bottom:24px;">
-    <tr>
-      <td style="padding:4px 0;color:#666;">Subtotal</td>
-      <td style="padding:4px 0;text-align:right;">${fmt(data.subtotal)}</td>
-    </tr>
     ${(data.totalDiscount ?? 0) > 0 ? `
     <tr>
       <td style="padding:4px 0;color:#666;">Discount</td>
       <td style="padding:4px 0;text-align:right;color:#22c55e;">-${fmt(data.totalDiscount!)}</td>
     </tr>` : ''}
-    <tr>
-      <td style="padding:4px 0;color:#666;">VAT (${data.vatRate}%)</td>
-      <td style="padding:4px 0;text-align:right;">${fmt(data.vatAmount)}</td>
-    </tr>
     <tr style="border-top:2px solid #1A2E1A;font-weight:700;font-size:15px;">
       <td style="padding:8px 0 0;">Total</td>
       <td style="padding:8px 0 0;text-align:right;">${fmt(data.total)}</td>
