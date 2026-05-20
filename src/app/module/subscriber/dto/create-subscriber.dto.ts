@@ -21,4 +21,9 @@ export class CreateSubscriberDto {
   @IsOptional()
   @IsEnum(['active', 'unsubscribed'])
   status?: string;
+
+  @ApiPropertyOptional({ example: 'Boiler Customer' })
+  @IsOptional()
+  @IsString()
+  tag?: string;
 }
