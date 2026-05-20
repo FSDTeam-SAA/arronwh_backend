@@ -14,13 +14,17 @@ const emptyStringToUndefined = ({ value }: { value: unknown }) =>
   value === '' ? undefined : value;
 
 export class CreateUserDto {
-  @ApiProperty({ example: '' })
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @Transform(emptyStringToUndefined)
   @IsString()
-  fullName: string;
+  fullName?: string;
 
-  @ApiProperty({ example: '' })
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @Transform(emptyStringToUndefined)
   @IsEmail()
-  email: string;
+  email?: string;
 
   @ApiPropertyOptional({ example: '' })
   @IsOptional()
@@ -120,4 +124,10 @@ export class CreateUserDto {
   @Transform(emptyStringToUndefined)
   @IsString()
   bio?: string;
+
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  @Transform(emptyStringToUndefined)
+  @IsString()
+  tag?: string;
 }
