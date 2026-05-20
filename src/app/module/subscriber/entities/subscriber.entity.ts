@@ -44,6 +44,9 @@ export class Subscriber {
     default: 'active',
   })
   status: string;
+
+  @Prop()
+  tag?: string;
 }
 
 export const SubscriberSchema = SchemaFactory.createForClass(Subscriber);
