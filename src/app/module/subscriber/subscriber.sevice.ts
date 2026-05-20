@@ -181,7 +181,10 @@ export class SubscriberService {
     const extraTitle = this.escapeHtml(extra.title ?? 'Not selected');
     const installAddress = this.escapeHtml(quote.installAddress ?? 'N/A');
     const quoteReference = this.escapeHtml(String(quote._id ?? 'N/A'));
-    const safeDescription = this.escapeHtml(description).replace(/\n/g, '<br />');
+    const safeDescription = this.escapeHtml(description).replace(
+      /\n/g,
+      '<br />',
+    );
 
     return `
       <!DOCTYPE html>
@@ -465,43 +468,73 @@ export class SubscriberService {
       sendMessageDto.attachmentPublicId = uploaded.public_id;
     }
 
-    // 2. Fetch all customer users except admins
-    const customers = await this.userModel.find({
+    // 2. Fetch customer users except admins, optionally filtered by tag
+    const customerQuery: any = {
       role: { $ne: 'admin' },
       email: { $exists: true, $ne: '' },
-    });
+    };
 
-    if (!customers.length) {
-      throw new HttpException('No customer users found', 404);
+    if (sendMessageDto.tag) {
+      customerQuery.tag = sendMessageDto.tag;
     }
 
-    // 3. Send email to each customer individually
-    const results = await Promise.allSettled(
-      customers.map((customer) => {
-        const displayName = customer.fullName?.trim() || customer.email;
+    const customers = await this.userModel.find(customerQuery);
 
-        // const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
-        const html = buildEmailHtml(
-          displayName,
-          sendMessageDto.message,
-          sendMessageDto.attachmentUrl,
-        );
+    if (!customers.length) {
+      throw new HttpException(
+        sendMessageDto.tag
+          ? `No customer users found for tag: ${sendMessageDto.tag}`
+          : 'No customer users found',
+        404,
+      );
+    }
 
-        return sendMailer(customer.email, sendMessageDto.subject, html);
-      }),
-    );
+    // 3. Send emails in batches to avoid SMTP temporary rate limits
+    const batchSize = 10;
+    const delayMs = 1000;
+    const results: PromiseSettledResult<unknown>[] = [];
+
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    for (let i = 0; i < customers.length; i += batchSize) {
+      const batch = customers.slice(i, i + batchSize);
+      const batchResults = await Promise.allSettled(
+        batch.map((customer) => {
+          const displayName = customer.fullName?.trim() || customer.email;
+
+          // const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
+          const html = buildEmailHtml(
+            displayName,
+            sendMessageDto.message,
+            sendMessageDto.attachmentUrl,
+          );
+
+          return sendMailer(customer.email, sendMessageDto.subject, html);
+        }),
+      );
+
+      results.push(...batchResults);
+
+      if (i + batchSize < customers.length) {
+        await wait(delayMs);
+      }
+    }
 
     // 4. Collect delivery report
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed = results
-      .filter((r) => r.status === 'rejected')
-      .map((r, i) => ({
-        email: customers[i].email,
-        reason: (r as PromiseRejectedResult).reason?.message ?? 'Unknown error',
+      .map((result, index) => ({ result, customer: customers[index] }))
+      .filter(({ result }) => result.status === 'rejected')
+      .map(({ result, customer }) => ({
+        email: customer.email,
+        reason:
+          (result as PromiseRejectedResult).reason?.message ?? 'Unknown error',
       }));
 
     return {
       total: customers.length,
+      tag: sendMessageDto.tag ?? null,
       succeeded,
       failedCount: failed.length,
       failed,

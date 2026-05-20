@@ -80,6 +80,11 @@ export class SubscriberController {
           type: 'string',
           example: 'Hello subscribers, check out our new offer!',
         },
+        tag: {
+          type: 'string',
+          example: 'Boiler Customer',
+          description: 'Optional. Leave empty to send to all customers.',
+        },
         attachment: {
           type: 'string',
           format: 'binary',
