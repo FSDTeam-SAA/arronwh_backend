@@ -8,6 +8,7 @@ import {
   HttpStatus,
   UseGuards,
   UploadedFile,
+  UploadedFiles,
   Req,
   Param,
   Put,
@@ -16,7 +17,10 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { fileUpload } from 'src/app/helpers/fileUploder';
 import {
   ApiBearerAuth,
@@ -42,7 +46,15 @@ export class UserController {
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @UseGuards(AuthGuard('admin'))
-  @UseInterceptors(FileInterceptor('profilePicture', fileUpload.uploadConfig))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'profilePicture', maxCount: 1 },
+        { name: 'csvFile', maxCount: 1 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @ApiBody({
     schema: {
       type: 'object',
@@ -62,6 +74,14 @@ export class UserController {
         profilePicture: {
           type: 'string',
           format: 'binary',
+        },
+        csvFile: {
+          type: 'string',
+          format: 'binary',
+        },
+        tag: {
+          type: 'string',
+          example: '',
         },
         dateOfBirth: {
           type: 'string',
@@ -97,9 +117,16 @@ export class UserController {
   @HttpCode(HttpStatus.CREATED)
   async createUser(
     @Body() createUserDto: CreateUserDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles()
+    files: {
+      profilePicture?: Express.Multer.File[];
+      csvFile?: Express.Multer.File[];
+    },
   ) {
-    const result = await this.userService.createUser(createUserDto, file);
+    const result = await this.userService.createUser(createUserDto, {
+      profilePicture: files?.profilePicture?.[0],
+      csvFile: files?.csvFile?.[0],
+    });
 
     return {
       message: 'User created successfully',

@@ -33,9 +33,7 @@ export class User {
   })
   role: string;
 
-  @Prop({ enum: ['male', 'female'],
-    default: 'male',
-   })
+  @Prop({ enum: ['male', 'female'], default: 'male' })
   gender: string;
 
   @Prop()
@@ -76,6 +74,9 @@ export class User {
 
   @Prop()
   bio: string;
+
+  @Prop({enum: ['Boiler Customer', 'Annual Service Agreement', 'Heat Pump Quote', 'Bathroom Lead'], default: 'Boiler Customer'})
+  tag: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
