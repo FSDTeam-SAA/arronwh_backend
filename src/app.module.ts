@@ -30,6 +30,7 @@ import { InvoiceModule } from './app/module/invoice/invoice.module';
 import { ValuesModule } from './app/module/values/values.module';
 import { LogoModule } from './app/module/logo/logo.module';
 import { NewslatterModule } from './app/module/newslatter/newslatter.module';
+import { SalesModule } from './app/module/sales/sales.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { NewslatterModule } from './app/module/newslatter/newslatter.module';
     ValuesModule,
     LogoModule,
     NewslatterModule,
+    SalesModule,
   ],
 
   controllers: [AppController],
