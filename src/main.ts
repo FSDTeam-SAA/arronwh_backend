@@ -6,15 +6,49 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import dotenv from 'dotenv';
 import { UtilsInterceptor } from './app/utils/utils.interceptor';
 import { GlobalExceptionFilter } from './app/middlewares/globalErrors.filter';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
+import { join } from 'path';
+import * as fs from 'fs';
 dotenv.config();
+
+const APPLE_PAY_ASSOCIATION_FILENAME =
+  'apple-developer-merchantid-domain-association';
+const APPLE_PAY_ASSOCIATION_CANDIDATE_PATHS = [
+  join(process.cwd(), '.well-known', APPLE_PAY_ASSOCIATION_FILENAME),
+  join(process.cwd(), 'well-known', APPLE_PAY_ASSOCIATION_FILENAME),
+];
+
+function resolveApplePayAssociationFilePath(): string | null {
+  for (const candidatePath of APPLE_PAY_ASSOCIATION_CANDIDATE_PATHS) {
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  return null;
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn'],
   });
 
+  // Raw body for Stripe webhook
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
+
+  // Apple Pay verification — direct file response
+  app.use(
+    '/.well-known/apple-developer-merchantid-domain-association',
+    (req: Request, res: Response, next: NextFunction) => {
+      const filePath = resolveApplePayAssociationFilePath();
+      if (filePath) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.sendFile(filePath);
+      } else {
+        next();
+      }
+    },
+  );
 
   app.use(cookieParser());
   app.enableCors({
@@ -37,10 +71,10 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapterHost));
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Kashhussain710 API')
-    .setDescription('Kashhussain710 API Documentation')
+    .setTitle('Arronwh API')
+    .setDescription('Arronwh API Documentation')
     .setVersion('1.0')
-    .addTag('Kashhussain710')
+    .addTag('Arronwh')
     .addBearerAuth(
       {
         type: 'http',

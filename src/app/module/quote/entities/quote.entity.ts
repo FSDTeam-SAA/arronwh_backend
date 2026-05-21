@@ -1,0 +1,97 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose, { HydratedDocument, Types } from 'mongoose';
+
+export type QuoteDocument = HydratedDocument<Quote>;
+
+class QuoteQuizAnswer {
+  @Prop()
+  question: string;
+
+  @Prop()
+  answer: string;
+
+  @Prop()
+  price: number;
+}
+
+class personalInfo {
+  @Prop()
+  title: string;
+
+  @Prop()
+  fastName: string;
+
+  @Prop()
+  sureName: string;
+
+  @Prop()
+  email: string;
+
+  @Prop()
+  mobleNumber: string;
+
+  @Prop()
+  postcode: string;
+}
+
+@Schema({ timestamps: true })
+export class Quote {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product' })
+  productId?: Types.ObjectId;
+
+  @Prop({ type: [QuoteQuizAnswer], _id: false, default: [] })
+  quizAnswers: QuoteQuizAnswer[];
+
+  @Prop({ type: personalInfo })
+  personalInfo: personalInfo;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'BoilerController' })
+  controller: Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Extra' })
+  extra: Types.ObjectId;
+
+  @Prop()
+  surveyDate: Date;
+
+  @Prop()
+  installDate: Date;
+
+  @Prop()
+  installAddress: string;
+
+  @Prop()
+  payByCard: boolean;
+
+  @Prop()
+  payMounthly: boolean;
+
+  @Prop()
+  status: string;
+  enum: ['pending', 'accepted', 'rejected'];
+
+  // @Prop()
+  // quotePrice?: number;
+
+  // @Prop()
+  // viewQuoteUrl?: string;
+
+  @Prop({
+    type: {
+      deposit: { type: Number },
+      mounthNumber: { type: Number },
+      amount: { type: Number },
+    },
+    required: false,
+  })
+  payMounthlyData: {
+    deposit: number;
+    mounthNumber: number;
+    amount: number;
+  };
+
+  @Prop({ type: mongoose.Types.ObjectId, ref: 'Booking' })
+  bookingId: Types.ObjectId;
+}
+
+export const QuoteSchema = SchemaFactory.createForClass(Quote);

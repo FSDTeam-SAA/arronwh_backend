@@ -1,0 +1,263 @@
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { IFilterParams } from 'src/app/helpers/pick';
+import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
+import { fileUpload } from 'src/app/helpers/fileUploder';
+import {
+  BoilerController,
+  BoilerControllerDocument,
+} from './entities/controller.entities';
+import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
+
+const controllerSearchableFields = ['title'];
+
+@Injectable()
+export class ControllerService {
+  constructor(
+    @InjectModel(BoilerController.name)
+    private readonly controllerModel: Model<BoilerControllerDocument>,
+    @InjectModel(Quote.name) private readonly quoteModel: Model<QuoteDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
+  ) {}
+
+  private async getBookingCountMap(): Promise<Map<string, number>> {
+    const bookingCounts = await this.bookingModel.aggregate([
+      {
+        $lookup: {
+          from: this.quoteModel.collection.name,
+          localField: 'quote',
+          foreignField: '_id',
+          as: 'quoteData',
+        },
+      },
+      { $unwind: '$quoteData' },
+      {
+        $match: {
+          'quoteData.controller': {
+            $exists: true,
+            $ne: null,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: '$quoteData.controller',
+          bookingCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return new Map(
+      bookingCounts.map((item) => [String(item._id), Number(item.bookingCount)]),
+    );
+  }
+
+  private compareValues(a: unknown, b: unknown, sortOrder: string) {
+    const direction = sortOrder === 'asc' ? 1 : -1;
+
+    if (a instanceof Date && b instanceof Date) {
+      return (a.getTime() - b.getTime()) * direction;
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+      return (a - b) * direction;
+    }
+
+    return String(a ?? '').localeCompare(String(b ?? '')) * direction;
+  }
+
+  private parseDto(dto: any) {
+    if (dto.price !== undefined) dto.price = Number(dto.price);
+    if (dto.discount !== undefined) dto.discount = Number(dto.discount);
+    if (dto.badges !== undefined && typeof dto.badges === 'string') {
+      dto.badges = [dto.badges];
+    }
+    return dto;
+  }
+
+  //   async create(dto: CreateControllerDto, files?: Express.Multer.File[]) {
+  //   const payload: any = {
+  //     title: dto.title,
+  //     description: dto.description,
+  //     badges:
+  //       typeof dto.badges === 'string'
+  //         ? [dto.badges]
+  //         : dto.badges ?? [],
+  //     price: Number(dto.price),
+  //     discount: dto.discount ? Number(dto.discount) : 0,
+  //     images: [],
+  //   };
+
+  //   if (files && files.length > 0) {
+  //     const uploadedUrls = await Promise.all(
+  //       files.map((file) =>
+  //         fileUpload.uploadToCloudinary(file).then((res) => res.url),
+  //       ),
+  //     );
+  //     payload.images = uploadedUrls;
+  //   }
+
+  //   const controller = await this.controllerModel.create(payload);
+  //   return controller;
+  // }
+  async create(body: any, files?: Express.Multer.File[]) {
+    const payload: any = {
+      title: body.title,
+      description: body.description,
+      badges:
+        typeof body.badges === 'string' ? [body.badges] : (body.badges ?? []),
+      price: Number(body.price),
+      discount: body.discount ? Number(body.discount) : 0,
+      images: [],
+    };
+
+    if (files && files.length > 0) {
+      const uploadedUrls = await Promise.all(
+        files.map((file) =>
+          fileUpload.uploadToCloudinary(file).then((res) => res.url),
+        ),
+      );
+      payload.images = uploadedUrls;
+    }
+
+    const controller = await this.controllerModel.create(payload);
+    return controller;
+  }
+
+  async update(id: string, body: any, files?: Express.Multer.File[]) {
+    const controller = await this.controllerModel.findById(id);
+    if (!controller) throw new HttpException('Controller not found', 404);
+
+    const payload: any = {};
+
+    if (body.title !== undefined) payload.title = body.title;
+    if (body.description !== undefined) payload.description = body.description;
+    if (body.price !== undefined) payload.price = Number(body.price);
+    if (body.discount !== undefined) payload.discount = Number(body.discount);
+    if (body.badges !== undefined) {
+      payload.badges =
+        typeof body.badges === 'string' ? [body.badges] : body.badges;
+    }
+
+    if (files && files.length > 0) {
+      const uploadedUrls = await Promise.all(
+        files.map((file) =>
+          fileUpload.uploadToCloudinary(file).then((res) => res.url),
+        ),
+      );
+      payload.images = uploadedUrls;
+    }
+
+    const updated = await this.controllerModel.findByIdAndUpdate(id, payload, {
+      new: true,
+    });
+    return updated;
+  }
+
+  async getAll(params: IFilterParams, options: IOptions) {
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const { searchTerm, ...filterData } = params;
+
+    let whereConditions: any = {};
+
+    if (searchTerm) {
+      whereConditions.$or = controllerSearchableFields.map((field) => ({
+        [field]: { $regex: searchTerm, $options: 'i' },
+      }));
+    }
+
+    if (Object.keys(filterData).length) {
+      whereConditions.$and = Object.entries(filterData).map(([key, value]) => ({
+        [key]: value,
+      }));
+    }
+
+    const [total, controllers, bookingCountMap] = await Promise.all([
+      this.controllerModel.countDocuments(whereConditions),
+      this.controllerModel.find(whereConditions).lean(),
+      this.getBookingCountMap(),
+    ]);
+
+    const highestBookingCount = controllers.reduce((max, controller) => {
+      const bookingCount = bookingCountMap.get(String(controller._id)) ?? 0;
+      return Math.max(max, bookingCount);
+    }, 0);
+
+    const data = controllers
+      .map((controller) => {
+        const bookingCount = bookingCountMap.get(String(controller._id)) ?? 0;
+        return {
+          ...controller,
+          bookingCount,
+          isBestSeller:
+            highestBookingCount > 0 && bookingCount === highestBookingCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.bookingCount !== a.bookingCount) {
+          return b.bookingCount - a.bookingCount;
+        }
+
+        return this.compareValues(
+          a[sortBy as keyof typeof a],
+          b[sortBy as keyof typeof b],
+          sortOrder,
+        );
+      })
+      .slice(skip, skip + limit);
+
+    return {
+      meta: { page, limit, total },
+      data,
+    };
+  }
+
+  async getSingle(id: string) {
+    const controller = await this.controllerModel.findById(id);
+    if (!controller) throw new HttpException('Controller not found', 404);
+    return controller;
+  }
+
+  // async update(
+  //   id: string,
+  //   dto: UpdateControllerDto,
+  //   files?: Express.Multer.File[],
+  // ) {
+  //   const controller = await this.controllerModel.findById(id);
+  //   if (!controller) throw new HttpException('Controller not found', 404);
+
+  //   const payload: any = {};
+
+  //   if (dto.title !== undefined) payload.title = dto.title;
+  //   if (dto.description !== undefined) payload.description = dto.description;
+  //   if (dto.price !== undefined) payload.price = Number(dto.price);
+  //   if (dto.discount !== undefined) payload.discount = Number(dto.discount);
+  //   if (dto.badges !== undefined) {
+  //     payload.badges =
+  //       typeof dto.badges === 'string' ? [dto.badges] : dto.badges;
+  //   }
+
+  //   if (files && files.length > 0) {
+  //     const uploadedUrls = await Promise.all(
+  //       files.map((file) =>
+  //         fileUpload.uploadToCloudinary(file).then((res) => res.url),
+  //       ),
+  //     );
+  //     payload.images = uploadedUrls;
+  //   }
+
+  //   const updated = await this.controllerModel.findByIdAndUpdate(id, payload, {
+  //     new: true,
+  //   });
+  //   return updated;
+  // }
+
+  async delete(id: string) {
+    const controller = await this.controllerModel.findById(id);
+    if (!controller) throw new HttpException('Controller not found', 404);
+    return this.controllerModel.findByIdAndDelete(id);
+  }
+}
