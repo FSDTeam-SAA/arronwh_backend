@@ -26,7 +26,7 @@ export class BookingService {
     }
 
     const existingBooking = await this.bookingModel.findOne({ quote });
-    if (existingBooking) {
+    if (existingBooking?.status === "confirmed") {
       throw new BadRequestException(
         `Booking already exists for quote ${quote}.`,
       );
