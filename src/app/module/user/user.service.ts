@@ -9,6 +9,11 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 
+type CreateUserFiles = {
+  profilePicture?: Express.Multer.File;
+  csvFile?: Express.Multer.File;
+};
+
 const userSearchAbleFields = [
   'fullName',
   'email',
@@ -18,6 +23,7 @@ const userSearchAbleFields = [
   'country',
   'city',
   'address',
+  'postcode',
   'status',
 ];
 
@@ -27,16 +33,100 @@ export class UserService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto, file?: Express.Multer.File) {
-    const user = await this.userModel.findOne({ email: createUserDto.email });
+  private getEmailsFromCsv(file: Express.Multer.File): string[] {
+    if (!file?.buffer?.length) {
+      throw new HttpException('No valid CSV file provided', 400);
+    }
+
+    const isCsv =
+      file.mimetype === 'text/csv' ||
+      file.mimetype === 'application/vnd.ms-excel' ||
+      file.originalname?.toLowerCase().endsWith('.csv');
+
+    if (!isCsv) {
+      throw new HttpException('Only CSV files are allowed', 400);
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const lines = file.buffer
+      .toString('utf8')
+      .split(/\r?\n/)
+      .map((value) => value.trim().replace(/^"|"$/g, ''))
+      .filter(Boolean);
+
+    if (!lines.length || lines[0].toLowerCase() !== 'email') {
+      throw new HttpException('CSV first row must be email', 400);
+    }
+
+    const emails = lines.slice(1).map((email) => email.toLowerCase());
+
+    if (!emails.length) {
+      throw new HttpException('CSV must contain at least one email', 400);
+    }
+
+    const invalidEmail = emails.find((email) => !emailRegex.test(email));
+    if (invalidEmail) {
+      throw new HttpException(`Invalid email in CSV: ${invalidEmail}`, 400);
+    }
+
+    return [...new Set(emails)];
+  }
+
+  async createUser(
+    createUserDto: CreateUserDto,
+    files?: CreateUserFiles | Express.Multer.File,
+  ) {
+    const payload = Object.fromEntries(
+      Object.entries(createUserDto).filter(
+        ([, value]) => value !== undefined && value !== '',
+      ),
+    ) as CreateUserDto;
+
+    const profilePicture =
+      files && 'buffer' in files ? files : files?.profilePicture;
+    const csvFile = files && 'buffer' in files ? undefined : files?.csvFile;
+
+    if (csvFile) {
+      const emails = this.getEmailsFromCsv(csvFile);
+      const existingUsers = await this.userModel
+        .find({ email: { $in: emails } })
+        .select('email');
+      const existingEmails = new Set(
+        existingUsers.map((user) => user.email.toLowerCase()),
+      );
+      const users = emails
+        .filter((email) => !existingEmails.has(email))
+        .map((email) => ({
+          ...payload,
+          email,
+          fullName: payload.fullName || email.split('@')[0],
+        }));
+
+      if (!users.length) {
+        throw new HttpException('All CSV users already exist', 400);
+      }
+
+      return this.userModel.insertMany(users);
+    }
+
+    if (!payload.email) {
+      throw new HttpException('Email is required', 400);
+    }
+
+    if (!payload.fullName) {
+      throw new HttpException('Full name is required', 400);
+    }
+
+    const user = await this.userModel.findOne({ email: payload.email });
     if (user) {
       throw new HttpException('User already exists', 400);
     }
-    if (file) {
-      const uploadedFile = await fileUpload.uploadToCloudinary(file);
-      createUserDto.profilePicture = uploadedFile.url;
+    if (profilePicture) {
+      const uploadedFile = await fileUpload.uploadToCloudinary(profilePicture);
+      payload.profilePicture = uploadedFile.url;
     }
-    const createdUser = await this.userModel.create(createUserDto);
+
+    const createdUser = await this.userModel.create(payload);
     return createdUser;
   }
 

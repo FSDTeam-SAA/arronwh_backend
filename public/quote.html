@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Get your fixed-price boiler quote — ArronWH</title>
+<link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <a href="./index.html" class="logo">
+      <span class="logo-mark">AW</span>
+      <span>YOU<span style="color:var(--green)">5</span>HEAT</span>
+    </a>
+    <nav class="nav">
+      <a href="./index.html#boilers">Boilers</a>
+      <a href="./index.html#how">How it works</a>
+      <a href="./index.html#reviews">Reviews</a>
+      <a href="./index.html#contact">Contact</a>
+    </nav>
+    <a href="./index.html" class="nav-cta">Save my progress</a>
+  </div>
+</header>
+
+<!-- The SPA mounts here -->
+<main id="quote-app"></main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="brand">
+      <div class="logo"><span class="logo-mark">AW</span><span>YOU<span style="color:var(--green)">5</span>HEAT</span></div>
+      <p style="margin-top:12px">Fixed-price boiler installations with 0% finance. Gas-Safe approved engineers nationwide.</p>
+    </div>
+    <div><h6>Boilers</h6><ul><li><a href="./quote.html">New boiler</a></li><li><a href="./quote.html">Replacement</a></li><li><a href="./quote.html">Controls</a></li></ul></div>
+    <div><h6>Company</h6><ul><li><a href="#">About</a></li><li><a href="#">Reviews</a></li><li><a href="#">Careers</a></li></ul></div>
+    <div><h6>Support</h6><ul><li><a href="#">Help centre</a></li><li><a href="#">Contact us</a></li><li><a href="#">Terms</a></li></ul></div>
+  </div>
+  <div class="container legal">© 2026 ArronWH (YOU5HEAT). All rights reserved.</div>
+</footer>
+
+<!-- API base — change to your backend URL -->
+<script>window.API_BASE = "http://localhost:3000/api/v1";</script>
+<script src="./js/api-client.js"></script>
+<script src="./js/quote-flow.js"></script>
+</body>
+</html>
