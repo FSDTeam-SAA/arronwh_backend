@@ -33,6 +33,8 @@ import { IssueModule } from './app/module/issue/issue.module';
 import { NewslatterModule } from './app/module/newslatter/newslatter.module';
 import { SalesModule } from './app/module/sales/sales.module';
 import { AftercareModule } from './app/module/aftercare/aftercare.module';
+import { EngineerModule } from './app/module/engineers/engineers.module';
+
 
 @Module({
   imports: [
@@ -67,6 +69,7 @@ import { AftercareModule } from './app/module/aftercare/aftercare.module';
     NewslatterModule,
     SalesModule,
     AftercareModule,
+    EngineerModule,
   ],
 
   controllers: [AppController],
