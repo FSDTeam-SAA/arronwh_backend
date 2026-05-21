@@ -32,6 +32,7 @@ import { LogoModule } from './app/module/logo/logo.module';
 import { IssueModule } from './app/module/issue/issue.module';
 import { NewslatterModule } from './app/module/newslatter/newslatter.module';
 import { SalesModule } from './app/module/sales/sales.module';
+import { AftercareModule } from './app/module/aftercare/aftercare.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { SalesModule } from './app/module/sales/sales.module';
     IssueModule,
     NewslatterModule,
     SalesModule,
+    AftercareModule,
   ],
 
   controllers: [AppController],
