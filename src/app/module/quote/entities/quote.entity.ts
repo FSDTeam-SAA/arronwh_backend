@@ -70,6 +70,9 @@ export class Quote {
   status: string;
   enum: ['pending', 'accepted', 'rejected'];
 
+  @Prop()
+  referredBy: string;
+
   // @Prop()
   // quotePrice?: number;
 

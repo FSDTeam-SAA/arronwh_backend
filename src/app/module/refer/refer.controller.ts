@@ -59,49 +59,49 @@ export class ReferController {
     type: String,
     example: '',
     description:
-      'Search by referred_by_email, referral_name, referral_email, referral_phone, referral_postcode, referral_address, message',
+      'Search by referred_by, name, email, phone, postcode, address, message',
   })
   @ApiQuery({
-    name: 'referred_by_email',
+    name: 'referred_by',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by exact referred_by_email',
+    description: 'Filter by exact referred_by',
   })
   @ApiQuery({
-    name: 'referral_name',
+    name: 'name',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by exact referral_name',
+    description: 'Filter by exact name',
   })
   @ApiQuery({
-    name: 'referral_email',
+    name: 'email',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by exact referral_email',
+    description: 'Filter by exact email',
   })
   @ApiQuery({
-    name: 'referral_phone',
+    name: 'phone',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by referral_phone',
+    description: 'Filter by phone',
   })
   @ApiQuery({
-    name: 'referral_postcode',
+    name: 'postcode',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by referral_postcode',
+    description: 'Filter by postcode',
   })
   @ApiQuery({
-    name: 'referral_address',
+    name: 'address',
     required: false,
     type: String,
     example: '',
-    description: 'Filter by referral_address',
+    description: 'Filter by address',
   })
   @ApiQuery({
     name: 'message',
@@ -141,12 +141,12 @@ export class ReferController {
   async getAllRefers(@Req() req: Request) {
     const filters = pick(req.query, [
       'searchTerm',
-      'referred_by_email',
-      'referral_name',
-      'referral_email',
-      'referral_phone',
-      'referral_postcode',
-      'referral_address',
+      'referred_by',
+      'name',
+      'email',
+      'phone',
+      'postcode',
+      'address',
       'message',
     ]);
     const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
