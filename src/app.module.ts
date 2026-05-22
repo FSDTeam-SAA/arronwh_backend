@@ -34,6 +34,7 @@ import { NewslatterModule } from './app/module/newslatter/newslatter.module';
 import { SalesModule } from './app/module/sales/sales.module';
 import { AftercareModule } from './app/module/aftercare/aftercare.module';
 import { EngineerModule } from './app/module/engineers/engineers.module';
+import { ReferModule } from './app/module/refer/refer.module';
 
 
 @Module({
@@ -70,6 +71,7 @@ import { EngineerModule } from './app/module/engineers/engineers.module';
     SalesModule,
     AftercareModule,
     EngineerModule,
+    ReferModule,
   ],
 
   controllers: [AppController],
