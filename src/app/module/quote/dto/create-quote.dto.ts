@@ -161,4 +161,8 @@ export class CreateQuoteDto {
   @ValidateNested()
   @Type(() => PayMounthlyDataDto)
   payMounthlyData?: PayMounthlyDataDto;
+
+  @ApiPropertyOptional({ example: 'exmple@gmail.com or chatbot' })
+  @IsOptional()
+  referredBy?: string;
 }
