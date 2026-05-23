@@ -17,6 +17,7 @@ import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
 import * as puppeteer from 'puppeteer';
 import { User, UserDocument } from '../user/entities/user.entity';
+import { Refer, ReferDocument } from '../refer/entities/refer.entity';
 
 @Injectable()
 export class QuoteService {
@@ -31,6 +32,8 @@ export class QuoteService {
     private readonly extraModel: Model<ExtraDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectModel(Refer.name)
+    private readonly referModel: Model<ReferDocument>,
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
@@ -48,6 +51,10 @@ export class QuoteService {
         'Personal information is required to save a quote.',
       );
     }
+
+    const referredBy = await this.referModel.findOne({
+      email: createQuoteDto.personalInfo.email,
+    });
 
     const session = await this.connection.startSession();
     session.startTransaction();
@@ -91,6 +98,7 @@ export class QuoteService {
         personalInfo,
         productId: productId ?? null,
         quizAnswers: quizAnswers ?? [],
+        referredBy: referredBy?.referred_by || rest.referredBy || null,
       });
 
       if (personalInfo) {

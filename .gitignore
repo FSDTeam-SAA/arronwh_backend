@@ -39,8 +39,6 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
-.env
 
 # temp directory
 .temp
@@ -117,3 +115,4 @@ config.bat
 
 # .vercel
 # config.bat
+.env

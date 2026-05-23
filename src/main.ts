@@ -9,6 +9,8 @@ import { GlobalExceptionFilter } from './app/middlewares/globalErrors.filter';
 import express, { NextFunction, Request, Response } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
+import 'dotenv/config';
+
 dotenv.config();
 
 const APPLE_PAY_ASSOCIATION_FILENAME =

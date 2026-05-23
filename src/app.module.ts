@@ -15,7 +15,6 @@ import { BookingModule } from './app/module/booking/booking.module';
 import { ProductModule } from './app/module/product/product.module';
 import { UserModule } from './app/module/user/user.module';
 import { DashboardModule } from './app/module/dashboard/dashboard.module';
-import { TwilioModule } from './app/module/twilio/twilio.module';
 import { PostcodeModule } from './app/module/postcode/postcode.module';
 import { BannerModule } from './app/module/banner/banner.module';
 import { PartnersModule } from './app/module/partners/partners.module';
@@ -34,6 +33,9 @@ import { NewslatterModule } from './app/module/newslatter/newslatter.module';
 import { SalesModule } from './app/module/sales/sales.module';
 import { AftercareModule } from './app/module/aftercare/aftercare.module';
 import { EngineerModule } from './app/module/engineers/engineers.module';
+import { ReferModule } from './app/module/refer/refer.module';
+import { SmsModule } from './app/module/sms/sms.module';
+import { CallModule } from './app/module/call/call.module';
 
 
 @Module({
@@ -51,7 +53,6 @@ import { EngineerModule } from './app/module/engineers/engineers.module';
     ProductModule,
     UserModule,
     DashboardModule,
-    TwilioModule,
     PostcodeModule,
     BannerModule,
     PartnersModule,
@@ -70,6 +71,9 @@ import { EngineerModule } from './app/module/engineers/engineers.module';
     SalesModule,
     AftercareModule,
     EngineerModule,
+    ReferModule,
+    SmsModule,
+    CallModule,
   ],
 
   controllers: [AppController],
