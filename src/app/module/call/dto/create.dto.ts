@@ -19,7 +19,7 @@ export class MakeCallDto {
 
   @ApiProperty({
     example: 'Hello, this is a confirmation call from YOLO HEAT.',
-    description: 'Text Twilio will read during the call',
+    description: 'Opening text Twilio will read before connecting the AI call',
     maxLength: 1000,
   })
   @IsString()
@@ -36,13 +36,13 @@ export class MakeCallDto {
   @IsUrl({ require_tld: false })
   statusCallbackUrl?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'https://api.example.com/call/recording',
-    description: 'Public webhook URL where Twilio sends the recorded voice answer',
+    description: 'Legacy recording callback URL. AI calls do not require this.',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsUrl({ require_tld: false })
-  recordingCallbackUrl: string;
+  recordingCallbackUrl?: string;
 }
 
 export class CallStatusCallbackDto {
