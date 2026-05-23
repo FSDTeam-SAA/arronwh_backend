@@ -3,7 +3,7 @@ import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateReferDto {
   @ApiPropertyOptional({ example: '' })
-  @IsEmail()
+  @IsString()
   referred_by: string;
 
   @ApiPropertyOptional({ example: '' })
