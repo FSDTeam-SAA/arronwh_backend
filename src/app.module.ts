@@ -36,8 +36,11 @@ import { EngineerModule } from './app/module/engineers/engineers.module';
 import { ReferModule } from './app/module/refer/refer.module';
 import { SmsModule } from './app/module/sms/sms.module';
 import { CallModule } from './app/module/call/call.module';
+import { ReviewModule } from './app/module/review/review.module';
 import { SocialpartershipModule } from './app/module/socialpartership/socialpartership.module';
 import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
+
+
 
 @Module({
   imports: [
@@ -75,6 +78,7 @@ import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
     ReferModule,
     SmsModule,
     CallModule,
+    ReviewModule,
     SocialpartershipModule,
     HeadofficeModule,
   ],

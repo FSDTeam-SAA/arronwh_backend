@@ -10,6 +10,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { join } from 'path';
 import * as fs from 'fs';
 import 'dotenv/config';
+import { setupCallAiStreamBridge } from './app/module/call/call-ai-stream.bridge';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn'],
   });
+  setupCallAiStreamBridge(app.getHttpServer());
 
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
 
