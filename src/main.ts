@@ -35,7 +35,6 @@ async function bootstrap() {
     logger: ['error', 'warn'],
   });
 
-  // Raw body for Stripe webhook
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
 
   // Apple Pay verification — direct file response
