@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Res,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { CallService } from './call.service';
 import {
   CallRecordingCallbackDto,
@@ -33,6 +42,14 @@ export class CallController {
   async getCallLogs(): Promise<{ success: boolean; data: CallLogDocument[] }> {
     const data = await this.callService.getCallLogs();
     return { success: true, data };
+  }
+
+  @Post('incoming')
+  @ApiOperation({ summary: 'Twilio incoming call webhook for AI voice calls' })
+  @ApiResponse({ status: 201, description: 'TwiML returned successfully' })
+  async handleIncomingCall(@Res() res: Response) {
+    const twiml = this.callService.buildIncomingAiVoiceTwiml();
+    res.type('text/xml').send(twiml);
   }
 
   @Post('status')

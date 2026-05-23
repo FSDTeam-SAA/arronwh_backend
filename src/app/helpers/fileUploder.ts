@@ -57,6 +57,40 @@ const uploadToCloudinary = async (
   });
 };
 
+const uploadVideoToCloudinary = async (
+  file: Express.Multer.File,
+): Promise<{ url: string; public_id: string }> => {
+  if (!file || !file.buffer?.length) {
+    throw new HttpException('No valid file provided', 400);
+  }
+
+  if (file.mimetype && !file.mimetype.startsWith('video/')) {
+    throw new HttpException('Only video files are allowed', 400);
+  }
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'healthcare_app/reviews',
+        resource_type: 'video',
+      },
+      (error, result) => {
+        if (error) return reject(error);
+
+        if (!result) {
+          return reject(new Error('Upload failed - no result returned'));
+        }
+        resolve({
+          url: result.secure_url,
+          public_id: result.public_id,
+        });
+      },
+    );
+
+    streamifier.createReadStream(file.buffer).pipe(uploadStream);
+  });
+};
+
 const deleteFromCloudinary = async (public_id: string): Promise<void> => {
   if (!public_id) return;
   try {
@@ -66,8 +100,19 @@ const deleteFromCloudinary = async (public_id: string): Promise<void> => {
   }
 };
 
+const deleteVideoFromCloudinary = async (public_id: string): Promise<void> => {
+  if (!public_id) return;
+  try {
+    await cloudinary.uploader.destroy(public_id, { resource_type: 'video' });
+  } catch (error) {
+    console.error('Cloudinary video delete failed:', error);
+  }
+};
+
 export const fileUpload = {
   uploadToCloudinary,
+  uploadVideoToCloudinary,
   deleteFromCloudinary,
+  deleteVideoFromCloudinary,
   uploadConfig,
 };

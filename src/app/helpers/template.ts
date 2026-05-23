@@ -355,4 +355,91 @@ export const buildFollowUpEmail = (
   `;
 };
 
+export const buildReferEmail = (
+  name: string,
+  referredBy?: string,
+): string => {
+  const safeName = escHtml(name || 'there');
+  const safeReferredBy = escHtml(referredBy || 'someone you know');
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>YOLO HEAT</title>
+    <style>
+      body { margin: 0; padding: 0; background: #EAEBEC; font-family: Arial, sans-serif; }
+      .wrapper { max-width: 620px; margin: 40px auto; background: #ffffff; overflow: hidden; border: 1px solid #d6d8da; }
+
+      .brand { background: #EAEBEC; padding: 22px 30px; color: #1A2E1A; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+      .brand-meta { color: #4b5a4d; font-size: 12px; font-weight: 400; line-height: 1.6; margin-top: 6px; letter-spacing: 0; }
+
+      .header { background: #FBFF26; padding: 26px 30px; }
+      .header h1 { color: #1A2E1A; margin: 0; font-size: 26px; font-weight: 900; }
+      .header .subtitle { color: #243824; margin: 10px 0 0; font-size: 14px; line-height: 1.6; }
+
+      .body { padding: 28px 30px 32px; color: #1A2E1A; }
+
+      .message-card { background: #D0E7D5; border: 1px solid #b9d2bf; padding: 22px; }
+
+      .greeting { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+
+      .refer-message { font-size: 15px; line-height: 1.7; color: #263a26; }
+
+      .primary-cta {
+        display: inline-block;
+        margin-top: 20px;
+        background: #1A2E1A;
+        color: #ffffff !important;
+        padding: 12px 20px;
+        text-decoration: none;
+        font-weight: 800;
+      }
+
+      .footer { background: #1A2E1A; padding: 18px 30px; text-align: center; font-size: 12px; color: #EAEBEC; }
+      .footer strong { color: #FBFF26; }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrapper">
+
+      <div class="brand">
+        ■ YOLO HEAT
+        <div class="brand-meta">London, United Kingdom · hello@yoloheat.co.uk</div>
+      </div>
+
+      <div class="header">
+        <h1>You have been referred to YOLO HEAT</h1>
+        <div class="subtitle">Start your boiler quote whenever you are ready.</div>
+      </div>
+
+      <div class="body">
+        <div class="message-card">
+
+          <div class="greeting">Hey ${safeName},</div>
+
+          <div class="refer-message">
+            ${safeReferredBy} referred you to YOLO HEAT for your boiler installation.
+            You can complete your quote online and see the options available for your home.
+          </div>
+
+          <a href="https://arronwh-website.vercel.app/boilers/property-overview" class="primary-cta">Complete your quote</a>
+
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>You are receiving this because someone referred you to YOLO HEAT.</p>
+        <p>&copy; ${new Date().getFullYear()} <strong>YOLO HEAT</strong>. All rights reserved.</p>
+      </div>
+
+    </div>
+  </body>
+  </html>
+  `;
+};
+
 export { teamEmail, customerEmail };
