@@ -37,7 +37,7 @@ export class CallLog {
   @Prop()
   statusCallbackUrl: string;
 
-  @Prop({ required: true })
+  @Prop()
   recordingCallbackUrl: string;
 
   @Prop()

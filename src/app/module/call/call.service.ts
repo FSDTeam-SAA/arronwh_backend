@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -40,7 +45,7 @@ export class CallService {
       const response = await this.client.calls.create({
         from: this.fromNumber,
         to,
-        twiml: this.buildVoiceTwiml(message, recordingCallbackUrl),
+        twiml: this.buildAiVoiceTwiml(message),
         ...(statusCallbackUrl && {
           statusCallback: statusCallbackUrl,
           statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
@@ -114,26 +119,51 @@ export class CallService {
     return updatedLog;
   }
 
-  private buildVoiceTwiml(message: string, recordingCallbackUrl: string): string {
+  buildIncomingAiVoiceTwiml(message = 'Hello, you are connected with YOLO HEAT. How can I help you today?'): string {
+    return this.buildAiVoiceTwiml(message);
+  }
+
+  private buildAiVoiceTwiml(message: string): string {
+    const streamUrl = this.getAiStreamUrl();
     const voiceResponse = new twilio.twiml.VoiceResponse();
-    voiceResponse.say({ voice: 'alice' }, message);
-    voiceResponse.say(
-      { voice: 'alice' },
-      'Please say your answer after the beep. Press any key when you are finished.',
-    );
-    voiceResponse.record({
-      action: recordingCallbackUrl,
-      finishOnKey: '1234567890*#',
-      maxLength: 60,
-      method: 'POST',
-      playBeep: true,
-      recordingStatusCallback: recordingCallbackUrl,
-      recordingStatusCallbackMethod: 'POST',
-      timeout: 5,
-      trim: 'trim-silence',
+
+    if (message) {
+      voiceResponse.say({ voice: 'alice' }, message);
+    }
+
+    const connect = voiceResponse.connect();
+    connect.stream({
+      url: streamUrl,
     });
-    voiceResponse.say({ voice: 'alice' }, 'Thank you. Goodbye.');
+
     return voiceResponse.toString();
+  }
+
+  private getAiStreamUrl(): string {
+    const explicitStreamUrl = this.configService.get<string>(
+      'TWILIO_AI_STREAM_URL',
+    );
+
+    if (explicitStreamUrl) {
+      return explicitStreamUrl;
+    }
+
+    const webhookBaseUrl = this.configService.get<string>(
+      'TWILIO_WEBHOOK_BASE_URL',
+    );
+
+    if (!webhookBaseUrl) {
+      throw new BadRequestException(
+        'TWILIO_WEBHOOK_BASE_URL or TWILIO_AI_STREAM_URL is required for AI voice calls',
+      );
+    }
+
+    const baseUrl = webhookBaseUrl.replace(/\/$/, '');
+    const wsBaseUrl = baseUrl
+      .replace(/^https:\/\//, 'wss://')
+      .replace(/^http:\/\//, 'ws://');
+
+    return `${wsBaseUrl}/api/v1/call/ai-stream`;
   }
 
   private normalizeCallStatus(status: string): CallStatus {
