@@ -7,6 +7,8 @@ import { Refer, ReferDocument } from './entities/refer.entity';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
+import sendMailer from 'src/app/helpers/sendMailer';
+import { buildReferEmail } from 'src/app/helpers/template';
 
 @Injectable()
 export class ReferService {
@@ -17,6 +19,16 @@ export class ReferService {
 
   async createRefer(createReferDto: CreateReferDto) {
     const result = await this.referModel.create(createReferDto);
+    const html = buildReferEmail(
+      createReferDto.name,
+      createReferDto.referred_by,
+    );
+
+    await sendMailer(
+      createReferDto.email,
+      'You have been referred to YOLO HEAT',
+      html,
+    );
 
     return result;
   }
