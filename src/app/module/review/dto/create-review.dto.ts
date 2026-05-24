@@ -20,27 +20,32 @@ export class CreateReviewDto {
   @IsOptional()
   subtitle?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example:
       'The quote process was simple and transparent. No hidden fees, no surprises.',
   })
   @IsString()
-  review: string;
+  @ApiProperty()
+  review?: string;
 
-  @ApiProperty({ example: 5 })
+  @ApiPropertyOptional({ example: 5 })
   @Type(() => Number)
   @IsNumber()
+  @IsOptional()
   @Min(1)
   @Max(5)
-  rating: number;
+  @IsOptional()
+  rating?: number;
 
-  @ApiProperty({ example: 'Michael Brown' })
+  @ApiPropertyOptional({ example: 'Michael Brown' })
   @IsString()
-  name: string;
+  @IsOptional()
+  name?: string;
 
-  @ApiProperty({ example: 'Manchester, UK' })
+  @ApiPropertyOptional({ example: 'Manchester, UK' })
   @IsString()
-  location: string;
+  @IsOptional()
+  location?: string;
 
   @ApiPropertyOptional({
     type: 'string',
