@@ -68,9 +68,9 @@ export class ReviewService {
   ) {
     const review = await this.reviewModel.findById(id);
     if (!review) throw new HttpException('Review is not found', 404);
-
     const updateData = Object.entries(updateReviewDto).reduce(
       (acc, [key, value]) => {
+        if (key === 'removeVideo') return acc;
         if (value !== undefined && value !== null && value !== '') {
           acc[key] = value;
         }
@@ -81,12 +81,21 @@ export class ReviewService {
 
     if (video) {
       const uploaded = await fileUpload.uploadVideoToCloudinary(video);
+      if (!uploaded?.public_id && review.videoPublicId) {
+        throw new HttpException('Video upload failed', 500);
+      }
       updateData.video = uploaded.url;
       updateData.videoPublicId = uploaded.public_id;
 
       if (review.videoPublicId) {
         await fileUpload.deleteVideoFromCloudinary(review.videoPublicId);
       }
+    } else if (updateReviewDto.removeVideo === 'true') {
+      if (review.videoPublicId) {
+        await fileUpload.deleteVideoFromCloudinary(review.videoPublicId);
+      }
+      updateData.video = '';
+      updateData.videoPublicId = '';
     }
 
     const result = await this.reviewModel.findByIdAndUpdate(id, updateData, {

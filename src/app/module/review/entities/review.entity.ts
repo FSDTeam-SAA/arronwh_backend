@@ -23,7 +23,7 @@ export class Review {
   @Prop({ required: true, trim: true })
   location: string;
 
-  @Prop()
+  @Prop({default: ''})
   video: string;
 
   @Prop()
