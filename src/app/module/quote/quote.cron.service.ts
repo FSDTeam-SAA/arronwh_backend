@@ -123,18 +123,18 @@ export class QuoteCronService {
         .find({
           createdAt: { $gte: threeMinutesAgo, $lte: twoMinutesAgo },
         })
-        .populate('productId', 'title price payablePrice')
-        .populate('controller', 'title price')
-        .populate('extra', 'title price')
+        .populate('productId', 'title price payablePrice images')
+        .populate('controller', 'title price images')
+        .populate('extra', 'title price images')
         .lean(),
 
       this.quoteModel
         .find({
           createdAt: { $gte: fiveMinutesAgo, $lte: fourMinutesAgo },
         })
-        .populate('productId', 'title price payablePrice')
-        .populate('controller', 'title price')
-        .populate('extra', 'title price')
+        .populate('productId', 'title price payablePrice images')
+        .populate('controller', 'title price images')
+        .populate('extra', 'title price images')
         .lean(),
     ]);
 
@@ -169,7 +169,11 @@ export class QuoteCronService {
       const quoteTotal = this.calculateQuoteTotal(quote);
 
       try {
-        const html = buildFollowUpEmail(name, quoteTotal);
+        const html = buildFollowUpEmail(name, quoteTotal, false, {
+          product: quote.productId as any,
+          controller: quote.controller as any,
+          extra: quote.extra as any,
+        });
         await sendMailer(email, 'Still thinking? Your quote is saved!', html);
         this.logger.log(`First follow-up sent to ${email}`);
       } catch (err) {
@@ -192,7 +196,11 @@ export class QuoteCronService {
       const quoteTotal = this.calculateQuoteTotal(quote);
 
       try {
-        const html = buildFollowUpEmail(name, quoteTotal, true);
+        const html = buildFollowUpEmail(name, quoteTotal, true, {
+          product: quote.productId as any,
+          controller: quote.controller as any,
+          extra: quote.extra as any,
+        });
         await sendMailer(email, 'Last reminder - your boiler quote is ready', html);
         this.logger.log(`Second follow-up sent to ${email}`);
       } catch (err) {
