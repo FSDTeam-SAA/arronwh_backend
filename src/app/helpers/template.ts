@@ -193,10 +193,24 @@ function customerEmail({
   };
 }
 
+type FollowUpQuoteItem = {
+  title?: string;
+  price?: number;
+  payablePrice?: number;
+  images?: string[];
+};
+
+type FollowUpQuoteItems = {
+  product?: FollowUpQuoteItem;
+  controller?: FollowUpQuoteItem;
+  extra?: FollowUpQuoteItem;
+};
+
 export const buildFollowUpEmail = (
   name: string,
   quoteTotal: number,
   isFinalReminder = false,
+  items: FollowUpQuoteItems = {},
 ): string => {
   const money = (value: number) =>
     `£${Number(value || 0).toLocaleString('en-GB', {
@@ -213,6 +227,69 @@ export const buildFollowUpEmail = (
     : 'Thanks for requesting your YOLO HEAT quote. We noticed the booking has not been completed yet, so we saved it for you.';
   const price = money(quoteTotal);
   const code = '';
+  const bookingUrl =
+    'https://arronwh-website.vercel.app/boilers/property-overview';
+  const safeName = escHtml(name || 'there');
+  const normalizeImage = (item?: FollowUpQuoteItem) =>
+    Array.isArray(item?.images) ? item?.images.find(Boolean) : undefined;
+  const selectedItems = [
+    {
+      label: 'Boiler',
+      item: items.product,
+      image: normalizeImage(items.product),
+      price: items.product?.payablePrice ?? items.product?.price ?? 0,
+    },
+    {
+      label: 'Controller',
+      item: items.controller,
+      image: normalizeImage(items.controller),
+      price: items.controller?.price ?? 0,
+    },
+    {
+      label: 'Extra',
+      item: items.extra,
+      image: normalizeImage(items.extra),
+      price: items.extra?.price ?? 0,
+    },
+  ].filter(({ item, image }) => item?.title || image);
+  const heroImage =
+    selectedItems.find(({ label, image }) => label === 'Boiler' && image)
+      ?.image || selectedItems.find(({ image }) => image)?.image;
+  const productRows = selectedItems
+    .map(({ label, item, image, price }, index) => {
+      const safeTitle = escHtml(item?.title || label);
+      const safeImage = image ? escHtml(image) : '';
+      const textCell = `
+        <td class="quote-row-copy" width="50%" valign="middle">
+          <div class="quote-row-title">${safeTitle}</div>
+          <div class="quote-row-subtitle">${label}</div>
+          <div class="quote-row-price">${money(price)}</div>
+        </td>
+      `;
+      const imageCell = `
+        <td class="quote-row-image-cell" width="50%" valign="middle">
+          ${
+            safeImage
+              ? `<img src="${safeImage}" alt="${safeTitle}" width="220" class="quote-row-image" />`
+              : ''
+          }
+        </td>
+      `;
+
+      return `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="quote-row">
+          <tr>
+            ${index % 2 === 0 ? textCell + imageCell : imageCell + textCell}
+          </tr>
+        </table>
+        ${
+          index < selectedItems.length - 1
+            ? '<div class="quote-row-divider"></div>'
+            : ''
+        }
+      `;
+    })
+    .join('');
 
   return `
   <!DOCTYPE html>
@@ -286,6 +363,44 @@ export const buildFollowUpEmail = (
 
       .footer { background: #1A2E1A; padding: 18px 30px; text-align: center; font-size: 12px; color: #EAEBEC; }
       .footer strong { color: #FBFF26; }
+      .wrapper { max-width: 600px; border: 0; background: #ffffff; }
+      .brand { background: #ffffff; color: #0c0c0d; padding: 26px 48px; font-size: 34px; line-height: 1; letter-spacing: 0; }
+      .brand-meta { display: none; }
+      .header { background: #0c0c0d; padding: 34px 48px 28px; }
+      .header h1 { color: #ffffff; font-size: 72px; line-height: .95; font-weight: 900; }
+      .header .subtitle { color: #ffffff; margin-top: 18px; font-size: 30px; line-height: 1.2; }
+      .hero-img { width: 100%; max-width: 504px; margin-top: 26px; border-radius: 24px; background: #ffffff; }
+      .body { padding: 24px 48px; color: #0c0c0d; }
+      .message-card { background: #ffffff; border: 0; padding: 0; }
+      .greeting { color: #0c0c0d; font-size: 32px; line-height: 1.2; font-weight: 900; }
+      .follow-message { color: #0c0c0d; font-size: 17px; line-height: 1.5; }
+      .total-box { background: #f3f3f3; border: 0; border-radius: 24px; padding: 24px; }
+      .total-label { color: #0c0c0d; font-size: 16px; letter-spacing: 0; text-transform: none; }
+      .total-value { color: #0c0c0d; font-size: 44px; line-height: 1; }
+      .primary-cta { background: #0c0c0d; color: #ffffff !important; border-radius: 999px; padding: 14px 34px; font-size: 18px; }
+      .product-grid { margin: 24px -48px 0; background: #f5f2ec; }
+      .quote-row { width: 100%; background: #f5f2ec; }
+      .quote-row-copy { padding: 34px 22px; text-align: center; color: #0c0c0d; font-family: Arial, sans-serif; }
+      .quote-row-title { font-size: 34px; line-height: 1.15; font-weight: 900; }
+      .quote-row-subtitle { margin-top: 14px; font-size: 20px; line-height: 1.25; }
+      .quote-row-price { margin-top: 8px; font-size: 13px; line-height: 1.25; }
+      .quote-row-image-cell { padding: 18px 22px; text-align: center; }
+      .quote-row-image { display: inline-block; width: 100%; max-width: 220px; height: auto; border: 0; }
+      .quote-row-divider { height: 4px; line-height: 4px; background: #dedbd5; font-size: 0; }
+      .footer { background: #0c0c0d; padding: 24px 48px 48px; color: #ffffff; }
+      .footer strong { color: #ffffff; }
+      @media only screen and (max-width: 480px) {
+        .wrapper { width: 100% !important; margin: 0 auto !important; }
+        .brand, .header, .body, .footer { padding-left: 6.667vw !important; padding-right: 6.667vw !important; }
+        .brand { font-size: 9vw !important; }
+        .header h1 { font-size: 16vw !important; }
+        .header .subtitle { font-size: 7vw !important; }
+        .product-grid { margin-left: -6.667vw !important; margin-right: -6.667vw !important; }
+        .quote-row-copy, .quote-row-image-cell { display: block !important; width: 100% !important; padding-left: 6.667vw !important; padding-right: 6.667vw !important; }
+        .quote-row-title { font-size: 9vw !important; }
+        .quote-row-subtitle { font-size: 5vw !important; }
+        .quote-row-image { max-width: 70% !important; }
+      }
     </style>
   </head>
 
@@ -299,14 +414,19 @@ export const buildFollowUpEmail = (
 
       <div class="header">
         <h1>${heading}</h1>
-        <div class="subtitle">Your installation quote total is shown below.</div>
+        <div class="subtitle">${isFinalReminder ? 'Last reminder. Complete your booking before your saved quote expires.' : 'We saved your selected package so you can come back and book in minutes.'}</div>
+        ${
+          heroImage
+            ? `<img src="${escHtml(heroImage)}" alt="Selected boiler" width="504" class="hero-img" />`
+            : ''
+        }
         <p>Your quote is about to expire — don’t miss this.</p>
       </div>
 
       <div class="body">
         <div class="message-card">
           
-          <div class="greeting">Hey ${name},</div>
+          <div class="greeting">Hey ${safeName},</div>
 
           <div class="follow-message">
             ${intro}<br/><br/>
@@ -318,14 +438,20 @@ export const buildFollowUpEmail = (
             <div class="total-value">${money(quoteTotal)}</div>
           </div>
 
+          ${
+            productRows
+              ? `<div class="product-grid">${productRows}</div>`
+              : ''
+          }
+
           <div class="follow-message">
             If you would like to continue, click below and complete your booking.
           </div>
 
-          <a href="https://arronwh-website.vercel.app/boilers/property-overview" class="primary-cta">Complete your booking</a>
+          <a href="${bookingUrl}" class="primary-cta">Complete your booking</a>
 
           <div class="message">
-            🥁... your quotes expire <strong>tonight</strong>.<br/><br/>
+            Your quotes expire <strong>tonight</strong>.<br/><br/>
 
             So, as a last attempt to secure your booking (and yes… help us hit our targets 🙄), 
             we’ve unlocked something special for you.<br/><br/>
@@ -346,6 +472,15 @@ export const buildFollowUpEmail = (
 
       <div class="footer">
         <p>You are receiving this because you requested a quote from YOLO HEAT.</p>
+        <p style="margin:12px 0;">
+          <a href="https://www.facebook.com/Yoloheat" style="display:inline-block;text-decoration:none;">
+            <img src="https://img.icons8.com/ios-filled/50/ffffff/facebook-new.png" alt="Facebook" width="28" height="28" style="display:inline-block;border:0;width:28px;height:28px;" />
+          </a>
+          &nbsp;&nbsp;
+          <a href="https://www.instagram.com/yolo.heat" style="display:inline-block;text-decoration:none;">
+            <img src="https://img.icons8.com/ios-filled/50/ffffff/instagram-new.png" alt="Instagram" width="28" height="28" style="display:inline-block;border:0;width:28px;height:28px;" />
+          </a>
+        </p>
         <p>&copy; ${new Date().getFullYear()} <strong>YOLO HEAT</strong>. All rights reserved.</p>
       </div>
 
