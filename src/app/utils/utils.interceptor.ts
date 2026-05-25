@@ -13,6 +13,10 @@ export class UtilsInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse<Response>();
     return next.handle().pipe(
       map((response) => {
+        if (res.headersSent) {
+          return response;
+        }
+
         if (
           response &&
           typeof response === 'object' &&
@@ -30,8 +34,8 @@ export class UtilsInterceptor implements NestInterceptor {
         return {
           statusCode: res.statusCode,
           success: res.statusCode >= 200 && res.statusCode < 300,
-          message: response.meta ?? `Request successfully completed`,
-          meta: response.data,
+          message: `Request successfully completed`,
+          meta: null,
           data: response,
         };
       }),
