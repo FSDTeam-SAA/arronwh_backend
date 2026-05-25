@@ -128,3 +128,46 @@ export class CallRecordingCallbackDto {
   @IsString()
   RecordingStatus?: string;
 }
+
+export class IncomingCallWebhookDto {
+  @ApiPropertyOptional({
+    example: 'CA2bbe61f53fc5d3258b17b78b790397b4',
+    description: 'Twilio call SID',
+  })
+  @IsOptional()
+  @IsString()
+  CallSid?: string;
+
+  @ApiPropertyOptional({
+    example: '+441615196015',
+    description: 'Caller phone number',
+  })
+  @IsOptional()
+  @IsString()
+  From?: string;
+
+  @ApiPropertyOptional({
+    example: '+447841625618',
+    description: 'Twilio receiver phone number',
+  })
+  @IsOptional()
+  @IsString()
+  To?: string;
+
+  @ApiPropertyOptional({
+    example: 'ringing',
+    description: 'Incoming call status from Twilio',
+  })
+  @IsOptional()
+  @IsString()
+  CallStatus?: string;
+
+  @ApiPropertyOptional({
+    example: 'Hello, you are connected with YOLO HEAT. How can I help you today?',
+    description: 'Optional opening text Twilio will read before streaming',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  message?: string;
+}
