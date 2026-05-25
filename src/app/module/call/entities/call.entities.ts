@@ -15,6 +15,11 @@ export enum CallStatus {
   CANCELED = 'canceled',
 }
 
+export enum CallDirection {
+  OUTBOUND = 'outbound',
+  INBOUND = 'inbound',
+}
+
 @Schema({ timestamps: true })
 export class CallLog {
   id: string;
@@ -22,8 +27,17 @@ export class CallLog {
   @Prop({ required: true })
   to: string;
 
+  @Prop()
+  from: string;
+
   @Prop({ required: true })
   message: string;
+
+  @Prop({
+    enum: CallDirection,
+    default: CallDirection.OUTBOUND,
+  })
+  direction: CallDirection;
 
   @Prop()
   twilioCallSid: string;
