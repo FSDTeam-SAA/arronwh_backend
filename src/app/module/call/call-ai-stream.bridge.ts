@@ -2,18 +2,26 @@ import axios from 'axios';
 import type { Server } from 'http';
 import { URL } from 'url';
 import dotenv from 'dotenv';
+import { spawn } from 'child_process';
 dotenv.config();
 
 
 const WebSocket = require('ws');
+const ffmpegPath = require('ffmpeg-static');
 
 const AI_CHATBOT_URL =
   process.env.AI_CHATBOT_URL || 'http://72.62.213.212:8000/api/voice/quote-follow-up';
 const AI_CHATBOT_INITIAL_URL =
   process.env.AI_CHATBOT_INITIAL_URL || `${AI_CHATBOT_URL.replace(/\/$/, '')}/initial`;
 const STREAM_PATH = '/api/v1/call/ai-stream';
-const AUDIO_FLUSH_MS = 800;
 const AUDIO_SAMPLE_RATE = 8000;
+const TWILIO_MEDIA_CHUNK_MS = Number(process.env.TWILIO_MEDIA_CHUNK_MS) || 20;
+const SPEECH_THRESHOLD =
+  Number(process.env.TWILIO_SPEECH_THRESHOLD) || 500;
+const SILENCE_FLUSH_MS =
+  Number(process.env.TWILIO_SILENCE_FLUSH_MS) || 1200;
+const MIN_SPEECH_MS = Number(process.env.TWILIO_MIN_SPEECH_MS) || 300;
+const MAX_UTTERANCE_MS = Number(process.env.TWILIO_MAX_UTTERANCE_MS) || 12000;
 const MAX_BUFFERED_AUDIO_BYTES =
   Number(process.env.TWILIO_MAX_BUFFERED_AUDIO_BYTES) || 512 * 1024;
 const AI_AUDIO_FORMAT = (process.env.AI_CHATBOT_AUDIO_FORMAT || 'wav').toLowerCase();
@@ -74,6 +82,20 @@ function twilioMuLawToPcm16(muLawAudio: Buffer): Buffer {
   }
 
   return pcmAudio;
+}
+
+function isSpeechChunk(muLawAudio: Buffer): boolean {
+  if (!muLawAudio.length) {
+    return false;
+  }
+
+  let absoluteSampleTotal = 0;
+
+  for (let index = 0; index < muLawAudio.length; index += 1) {
+    absoluteSampleTotal += Math.abs(muLawByteToPcm16(muLawAudio[index]));
+  }
+
+  return absoluteSampleTotal / muLawAudio.length >= SPEECH_THRESHOLD;
 }
 
 function pcm16ToTwilioMuLaw(pcmAudio: Buffer): Buffer {
@@ -182,6 +204,73 @@ function wavToTwilioMuLaw(wavAudio: Buffer): Buffer | null {
   return pcm16ToTwilioMuLaw(monoPcm);
 }
 
+function mp3ToTwilioMuLaw(mp3Audio: Buffer): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    if (!ffmpegPath) {
+      reject(new Error('ffmpeg binary is not available'));
+      return;
+    }
+
+    const ffmpeg = spawn(ffmpegPath, [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      'pipe:0',
+      '-ac',
+      '1',
+      '-ar',
+      String(AUDIO_SAMPLE_RATE),
+      '-f',
+      'mulaw',
+      'pipe:1',
+    ]);
+
+    const output: Buffer[] = [];
+    const errors: Buffer[] = [];
+
+    ffmpeg.stdout.on('data', (chunk: Buffer) => output.push(chunk));
+    ffmpeg.stderr.on('data', (chunk: Buffer) => errors.push(chunk));
+    ffmpeg.on('error', reject);
+    ffmpeg.on('close', (code) => {
+      if (code === 0) {
+        resolve(Buffer.concat(output));
+        return;
+      }
+
+      reject(
+        new Error(
+          Buffer.concat(errors).toString('utf8') ||
+            `ffmpeg exited with code ${code}`,
+        ),
+      );
+    });
+
+    ffmpeg.stdin.end(mp3Audio);
+  });
+}
+
+function detectAudioFormat(audio: Buffer): string | undefined {
+  if (audio.length >= 12) {
+    const riff = audio.toString('ascii', 0, 4);
+    const wave = audio.toString('ascii', 8, 12);
+
+    if (riff === 'RIFF' && wave === 'WAVE') {
+      return 'audio/wav';
+    }
+  }
+
+  if (audio.length >= 3 && audio.toString('ascii', 0, 3) === 'ID3') {
+    return 'audio/mpeg';
+  }
+
+  if (audio.length >= 2 && audio[0] === 0xff && (audio[1] & 0xe0) === 0xe0) {
+    return 'audio/mpeg';
+  }
+
+  return undefined;
+}
+
 function stripDataUri(audio: string): { mediaType?: string; base64: string } {
   const match = audio.match(/^data:([^;]+);base64,(.+)$/);
 
@@ -278,23 +367,35 @@ export function setupCallAiStreamBridge(server: Server) {
     let callSid = '';
     let audioBuffer: Buffer[] = [];
     let bufferedAudioBytes = 0;
-    let flushTimer: NodeJS.Timeout | null = null;
     let isFlushing = false;
     let isClosed = false;
     let initialMessage = '';
     let initialMessageSent = false;
+    let speechStarted = false;
+    let speechMs = 0;
+    let silenceMs = 0;
+    let pendingFlushAfterCurrent = false;
 
-    const sendAudioToTwilio = (audio: string, format?: string) => {
+    const sendAudioToTwilio = async (audio: string, format?: string) => {
       if (!streamSid || !audio || twilioWs.readyState !== WebSocket.OPEN) {
         return;
       }
 
       const normalizedAudio = stripDataUri(audio);
-      const responseFormat = normalizedAudio.mediaType || format || 'audio/x-mulaw';
+      const audioBytes = Buffer.from(normalizedAudio.base64, 'base64');
+      const responseFormat = (
+        normalizedAudio.mediaType ||
+        detectAudioFormat(audioBytes) ||
+        format ||
+        'audio/x-mulaw'
+      )
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
       let twilioAudio = normalizedAudio.base64;
 
       if (responseFormat === 'audio/wav' || responseFormat === 'audio/x-wav') {
-        const convertedAudio = wavToTwilioMuLaw(Buffer.from(twilioAudio, 'base64'));
+        const convertedAudio = wavToTwilioMuLaw(audioBytes);
 
         if (!convertedAudio) {
           console.error('AI returned an unsupported WAV format');
@@ -303,8 +404,16 @@ export function setupCallAiStreamBridge(server: Server) {
 
         twilioAudio = convertedAudio.toString('base64');
       } else if (responseFormat === 'audio/mpeg' || responseFormat === 'audio/mp3') {
-        console.error('AI returned MP3 audio, but Twilio playback requires mu-law or WAV');
-        return;
+        try {
+          const convertedAudio = await mp3ToTwilioMuLaw(audioBytes);
+          twilioAudio = convertedAudio.toString('base64');
+          console.log(
+            `Converted AI MP3 audio to Twilio mu-law (${convertedAudio.length} bytes)`,
+          );
+        } catch (error) {
+          console.error('Failed to convert AI MP3 audio for Twilio:', error);
+          return;
+        }
       }
 
       twilioWs.send(
@@ -383,11 +492,26 @@ export function setupCallAiStreamBridge(server: Server) {
         const responseAudio = await requestInitialAiAudio(initialMessage, sessionId);
 
         if (responseAudio.audio) {
-          sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
+          console.log(
+            `AI initial audio response received (${responseAudio.format || 'unknown format'})`,
+          );
+          await sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
         }
       } catch (error) {
         console.error('AI initial voice request failed:', error);
       }
+    };
+
+    const resetSpeechState = () => {
+      speechStarted = false;
+      speechMs = 0;
+      silenceMs = 0;
+    };
+
+    const clearBufferedAudio = () => {
+      audioBuffer = [];
+      bufferedAudioBytes = 0;
+      resetSpeechState();
     };
 
     const flushAudioToAi = async () => {
@@ -399,8 +523,7 @@ export function setupCallAiStreamBridge(server: Server) {
       const twilioAudio = Buffer.concat(audioBuffer, bufferedAudioBytes);
       const pcmAudio = twilioMuLawToPcm16(twilioAudio);
       const wavAudio = createPcmWav(pcmAudio);
-      audioBuffer = [];
-      bufferedAudioBytes = 0;
+      clearBufferedAudio();
 
       if (AI_AUDIO_FORMAT !== 'wav') {
         console.error(`Unsupported AI_CHATBOT_AUDIO_FORMAT: ${AI_AUDIO_FORMAT}`);
@@ -413,28 +536,48 @@ export function setupCallAiStreamBridge(server: Server) {
         const responseAudio = await requestAiAudio(wavAudio, sessionId);
 
         if (responseAudio.audio) {
-          sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
+          console.log(
+            `AI follow-up audio response received (${responseAudio.format || 'unknown format'})`,
+          );
+          await sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
         }
       } catch (error) {
         console.error('AI voice bridge request failed:', error);
       } finally {
         isFlushing = false;
 
-        if (audioBuffer.length && !isClosed) {
-          scheduleFlush(0);
+        if (pendingFlushAfterCurrent && audioBuffer.length && !isClosed) {
+          pendingFlushAfterCurrent = false;
+          void flushAudioToAi();
         }
       }
     };
 
-    const scheduleFlush = (delayMs = AUDIO_FLUSH_MS) => {
-      if (flushTimer) {
+    const finalizeSpeechTurn = (reason: string) => {
+      if (!audioBuffer.length) {
+        resetSpeechState();
         return;
       }
 
-      flushTimer = setTimeout(() => {
-        flushTimer = null;
-        void flushAudioToAi();
-      }, delayMs);
+      if (speechMs < MIN_SPEECH_MS) {
+        console.log(
+          `Dropped short/noisy audio turn (${speechMs}ms speech, reason=${reason})`,
+        );
+        clearBufferedAudio();
+        return;
+      }
+
+      console.log(
+        `Sending user speech to AI (${speechMs}ms speech, ${bufferedAudioBytes} bytes, reason=${reason})`,
+      );
+      resetSpeechState();
+
+      if (isFlushing) {
+        pendingFlushAfterCurrent = true;
+        return;
+      }
+
+      void flushAudioToAi();
     };
 
     twilioWs.on('message', (rawMessage) => {
@@ -450,6 +593,7 @@ export function setupCallAiStreamBridge(server: Server) {
         streamSid = message.start?.streamSid || message.streamSid || '';
         callSid = message.start?.callSid || '';
         initialMessage = message.start?.customParameters?.initialMessage || '';
+        console.log(`Twilio AI stream started | callSid=${callSid} streamSid=${streamSid}`);
         void playInitialAiMessage();
         return;
       }
@@ -461,34 +605,46 @@ export function setupCallAiStreamBridge(server: Server) {
           return;
         }
 
-        audioBuffer.push(audioChunk);
-        bufferedAudioBytes += audioChunk.length;
+        const speechDetected = isSpeechChunk(audioChunk);
 
-        if (bufferedAudioBytes >= MAX_BUFFERED_AUDIO_BYTES) {
-          twilioWs.close(1009, 'Audio buffer limit exceeded');
+        if (speechDetected) {
+          speechStarted = true;
+          speechMs += TWILIO_MEDIA_CHUNK_MS;
+          silenceMs = 0;
+          audioBuffer.push(audioChunk);
+          bufferedAudioBytes += audioChunk.length;
+        } else if (speechStarted) {
+          silenceMs += TWILIO_MEDIA_CHUNK_MS;
+          audioBuffer.push(audioChunk);
+          bufferedAudioBytes += audioChunk.length;
+        } else {
           return;
         }
 
-        scheduleFlush();
+        if (bufferedAudioBytes >= MAX_BUFFERED_AUDIO_BYTES) {
+          finalizeSpeechTurn('buffer-limit');
+          return;
+        }
+
+        if (speechMs >= MAX_UTTERANCE_MS) {
+          finalizeSpeechTurn('max-utterance');
+          return;
+        }
+
+        if (speechStarted && silenceMs >= SILENCE_FLUSH_MS) {
+          finalizeSpeechTurn('silence');
+        }
         return;
       }
 
       if (message.event === 'stop') {
-        if (flushTimer) {
-          clearTimeout(flushTimer);
-          flushTimer = null;
-        }
-        void flushAudioToAi();
+        finalizeSpeechTurn('call-stop');
       }
     });
 
     twilioWs.on('close', () => {
       isClosed = true;
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-      }
-      audioBuffer = [];
-      bufferedAudioBytes = 0;
+      clearBufferedAudio();
     });
 
     twilioWs.on('error', (error) => {

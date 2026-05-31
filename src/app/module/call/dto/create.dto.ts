@@ -100,17 +100,17 @@ export class CallRecordingCallbackDto {
     example: 'RE557ce644e5ab84fa21cc21112e22c485',
     description: 'Twilio recording SID',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  RecordingSid: string;
+  RecordingSid?: string;
 
   @ApiProperty({
     example: 'https://api.twilio.com/2010-04-01/Accounts/ACxxx/Recordings/RExxx',
     description: 'Twilio recording URL',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  RecordingUrl: string;
+  RecordingUrl?: string;
 
   @ApiPropertyOptional({
     example: '7',
@@ -127,6 +127,14 @@ export class CallRecordingCallbackDto {
   @IsOptional()
   @IsString()
   RecordingStatus?: string;
+
+  @ApiPropertyOptional({
+    example: '12300',
+    description: 'Twilio recording error code when recording status is absent',
+  })
+  @IsOptional()
+  @IsString()
+  ErrorCode?: string;
 }
 
 export class IncomingCallWebhookDto {
