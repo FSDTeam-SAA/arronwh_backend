@@ -44,7 +44,6 @@ import { QuizePriceManagementModule } from './app/module/quize-price-management/
 import { FooterManagementModule } from './app/module/footer-management/footer-management.module';
 
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -88,6 +87,7 @@ import { FooterManagementModule } from './app/module/footer-management/footer-ma
     QuizePriceManagementModule,
     FooterManagementModule,
   ],
+
 
   controllers: [AppController],
   providers: [AppService],
