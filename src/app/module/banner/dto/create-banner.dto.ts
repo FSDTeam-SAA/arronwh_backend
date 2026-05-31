@@ -50,4 +50,9 @@ export class CreateBannerDto {
   @IsString()
   @IsOptional()
   textColor?: string;
+
+  @ApiPropertyOptional({ example: 'Get quote' })
+  @IsString()
+  @IsOptional()
+  buttonText?: string;
 }

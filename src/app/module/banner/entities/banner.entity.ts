@@ -28,6 +28,9 @@ export class Banner {
 
   @Prop()
   textColor: string;
+
+  @Prop()
+  buttonText?: string;
 }
 
 export const BannerSchema = SchemaFactory.createForClass(Banner);
