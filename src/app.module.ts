@@ -28,6 +28,7 @@ import { AboutusModule } from './app/module/aboutus/aboutus.module';
 import { InvoiceModule } from './app/module/invoice/invoice.module';
 import { ValuesModule } from './app/module/values/values.module';
 import { LogoModule } from './app/module/logo/logo.module';
+import { FaviconModule } from './app/module/favicon/favicon.module';
 import { IssueModule } from './app/module/issue/issue.module';
 import { NewslatterModule } from './app/module/newslatter/newslatter.module';
 import { SalesModule } from './app/module/sales/sales.module';
@@ -70,6 +71,7 @@ import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
     InvoiceModule,
     ValuesModule,
     LogoModule,
+    FaviconModule,
     IssueModule,
     NewslatterModule,
     SalesModule,
