@@ -9,6 +9,8 @@ const WebSocket = require('ws');
 
 const AI_CHATBOT_URL =
   process.env.AI_CHATBOT_URL || 'http://72.62.213.212:8000/api/voice/quote-follow-up';
+const AI_CHATBOT_INITIAL_URL =
+  process.env.AI_CHATBOT_INITIAL_URL || `${AI_CHATBOT_URL.replace(/\/$/, '')}/initial`;
 const STREAM_PATH = '/api/v1/call/ai-stream';
 const AUDIO_FLUSH_MS = 800;
 const AUDIO_SAMPLE_RATE = 8000;
@@ -194,6 +196,10 @@ function getAiResponseAudio(responseData: any): {
   audio?: string;
   format?: string;
 } {
+  if (typeof responseData === 'string') {
+    return { audio: responseData };
+  }
+
   const audio =
     responseData?.audio ||
     responseData?.audioBase64 ||
@@ -207,6 +213,41 @@ function getAiResponseAudio(responseData: any): {
     responseData?.media?.format;
 
   return { audio, format };
+}
+
+function parseAiAudioResponse(responseData: Buffer, contentType = ''): {
+  audio?: string;
+  format?: string;
+} {
+  const normalizedContentType = contentType.split(';')[0].trim().toLowerCase();
+
+  if (normalizedContentType.startsWith('audio/')) {
+    return {
+      audio: responseData.toString('base64'),
+      format: normalizedContentType,
+    };
+  }
+
+  const responseText = responseData.toString('utf8').trim();
+
+  if (!responseText) {
+    return {};
+  }
+
+  if (
+    normalizedContentType === 'application/json' ||
+    responseText.startsWith('{') ||
+    responseText.startsWith('[') ||
+    responseText.startsWith('"')
+  ) {
+    try {
+      return getAiResponseAudio(JSON.parse(responseText));
+    } catch {
+      return { audio: responseText };
+    }
+  }
+
+  return { audio: responseText };
 }
 
 export function setupCallAiStreamBridge(server: Server) {
@@ -287,12 +328,47 @@ export function setupCallAiStreamBridge(server: Server) {
       );
     };
 
-    const requestAiAudio = async (payload: Record<string, any>) => {
-      const response = await axios.post(AI_CHATBOT_URL, payload, {
+    const requestInitialAiAudio = async (quoteData: string, sessionId: string) => {
+      const body = new URLSearchParams();
+      body.set('quote_data', quoteData);
+      body.set('session_id', sessionId);
+
+      const response = await axios.post(AI_CHATBOT_INITIAL_URL, body, {
         timeout: 30000,
+        responseType: 'arraybuffer',
+        transformResponse: [(data) => data],
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          'x-voice-session-id': sessionId,
+        },
       });
 
-      return getAiResponseAudio(response.data);
+      return parseAiAudioResponse(
+        Buffer.from(response.data),
+        response.headers['content-type'],
+      );
+    };
+
+    const requestAiAudio = async (wavAudio: Buffer, sessionId: string) => {
+      const body = new FormData();
+      const audioArrayBuffer = new ArrayBuffer(wavAudio.byteLength);
+      new Uint8Array(audioArrayBuffer).set(wavAudio);
+      body.set('session_id', sessionId);
+      body.set('audio', new Blob([audioArrayBuffer], { type: 'audio/wav' }), 'user-audio.wav');
+
+      const response = await axios.post(AI_CHATBOT_URL, body, {
+        timeout: 30000,
+        responseType: 'arraybuffer',
+        transformResponse: [(data) => data],
+        headers: {
+          'x-voice-session-id': sessionId,
+        },
+      });
+
+      return parseAiAudioResponse(
+        Buffer.from(response.data),
+        response.headers['content-type'],
+      );
     };
 
     const playInitialAiMessage = async () => {
@@ -303,16 +379,8 @@ export function setupCallAiStreamBridge(server: Server) {
       initialMessageSent = true;
 
       try {
-        const responseAudio = await requestAiAudio({
-          callSid,
-          streamSid,
-          event: 'call-start',
-          inputType: 'text',
-          message: initialMessage,
-          text: initialMessage,
-          responseMimeType: 'audio/wav',
-          responseFormat: 'audio/wav',
-        });
+        const sessionId = callSid || streamSid;
+        const responseAudio = await requestInitialAiAudio(initialMessage, sessionId);
 
         if (responseAudio.audio) {
           sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
@@ -331,7 +399,6 @@ export function setupCallAiStreamBridge(server: Server) {
       const twilioAudio = Buffer.concat(audioBuffer, bufferedAudioBytes);
       const pcmAudio = twilioMuLawToPcm16(twilioAudio);
       const wavAudio = createPcmWav(pcmAudio);
-      const audio = wavAudio.toString('base64');
       audioBuffer = [];
       bufferedAudioBytes = 0;
 
@@ -342,21 +409,8 @@ export function setupCallAiStreamBridge(server: Server) {
       }
 
       try {
-        const responseAudio = await requestAiAudio({
-          callSid,
-          streamSid,
-          event: 'user-audio',
-          inputType: 'audio',
-          audio,
-          audioBase64: audio,
-          mimeType: 'audio/wav',
-          format: 'audio/wav',
-          fileExtension: 'wav',
-          sampleRate: AUDIO_SAMPLE_RATE,
-          encoding: 'base64',
-          responseMimeType: 'audio/wav',
-          responseFormat: 'audio/wav',
-        });
+        const sessionId = callSid || streamSid;
+        const responseAudio = await requestAiAudio(wavAudio, sessionId);
 
         if (responseAudio.audio) {
           sendAudioToTwilio(responseAudio.audio, responseAudio.format || 'audio/wav');
