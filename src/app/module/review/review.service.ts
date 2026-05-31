@@ -71,7 +71,7 @@ export class ReviewService {
     const updateData = Object.entries(updateReviewDto).reduce(
       (acc, [key, value]) => {
         if (key === 'removeVideo') return acc;
-        if (value !== undefined && value !== null && value !== '') {
+        if (value !== undefined && value !== null) {
           acc[key] = value;
         }
         return acc;

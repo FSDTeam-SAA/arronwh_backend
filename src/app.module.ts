@@ -41,7 +41,7 @@ import { ReviewModule } from './app/module/review/review.module';
 import { SocialpartershipModule } from './app/module/socialpartership/socialpartership.module';
 import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
 import { QuizePriceManagementModule } from './app/module/quize-price-management/quize-price-management.module';
-
+import { FooterManagementModule } from './app/module/footer-management/footer-management.module';
 
 
 @Module({
@@ -85,7 +85,9 @@ import { QuizePriceManagementModule } from './app/module/quize-price-management/
     SocialpartershipModule,
     HeadofficeModule,
     QuizePriceManagementModule,
+    FooterManagementModule,
   ],
+
 
   controllers: [AppController],
   providers: [AppService],
