@@ -1,5 +1,7 @@
-import { Prop, Schema } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+
+export type AftercareDocument = HydratedDocument<Aftercare>;
 
 @Schema({ timestamps: true })
 export class Aftercare {
@@ -10,4 +12,4 @@ export class Aftercare {
   subTitle: string;
 }
 
-
+export const AftercareSchema = SchemaFactory.createForClass(Aftercare);
