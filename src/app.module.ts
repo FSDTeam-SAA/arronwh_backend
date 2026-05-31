@@ -40,6 +40,7 @@ import { CallModule } from './app/module/call/call.module';
 import { ReviewModule } from './app/module/review/review.module';
 import { SocialpartershipModule } from './app/module/socialpartership/socialpartership.module';
 import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
+import { QuizePriceManagementModule } from './app/module/quize-price-management/quize-price-management.module';
 
 
 
@@ -83,6 +84,7 @@ import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
     ReviewModule,
     SocialpartershipModule,
     HeadofficeModule,
+    QuizePriceManagementModule,
   ],
 
   controllers: [AppController],
