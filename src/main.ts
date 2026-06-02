@@ -11,6 +11,7 @@ import { join } from 'path';
 import * as fs from 'fs';
 import 'dotenv/config';
 import { setupCallAiStreamBridge } from './app/module/call/call-ai-stream.bridge';
+import * as bodyParser from 'body-parser';
 
 dotenv.config();
 
@@ -38,6 +39,8 @@ async function bootstrap() {
   setupCallAiStreamBridge(app.getHttpServer());
 
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
+  app.use(bodyParser.json({ limit: '500mb' }));
+app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
 
   // Apple Pay verification — direct file response
   app.use(

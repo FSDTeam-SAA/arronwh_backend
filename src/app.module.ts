@@ -42,6 +42,7 @@ import { SocialpartershipModule } from './app/module/socialpartership/socialpart
 import { HeadofficeModule } from './app/module/headoffice/headoffice.module';
 import { QuizePriceManagementModule } from './app/module/quize-price-management/quize-price-management.module';
 import { FooterManagementModule } from './app/module/footer-management/footer-management.module';
+import { EmailTemplateModule } from './app/module/email-template/email-template.module';
 
 
 @Module({
@@ -86,6 +87,7 @@ import { FooterManagementModule } from './app/module/footer-management/footer-ma
     HeadofficeModule,
     QuizePriceManagementModule,
     FooterManagementModule,
+    EmailTemplateModule,
   ],
 
 

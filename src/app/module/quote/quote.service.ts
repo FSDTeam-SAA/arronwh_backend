@@ -18,6 +18,8 @@ import sendMailer from 'src/app/helpers/sendMailer';
 import * as puppeteer from 'puppeteer';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { Refer, ReferDocument } from '../refer/entities/refer.entity';
+import { createQuoteSummaryContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class QuoteService {
@@ -34,6 +36,7 @@ export class QuoteService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Refer.name)
     private readonly referModel: Model<ReferDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   async createQuote(createQuoteDto: CreateQuoteDto) {
@@ -313,9 +316,15 @@ export class QuoteService {
     //   await this.quoteModel.findByIdAndUpdate(quoteId, { $set: updateData });
     // }
 
-    const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
+    const fallbackHtml = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'quote-summary',
+      fallbackSubject: 'Your Quote Summary',
+      fallbackHtml,
+      context: createQuoteSummaryContext(quote, parsedPrice, parsedUrl),
+    });
 
-    await sendMailer(email, 'Your Quote Summary', html);
+    await sendMailer(email, emailTemplate.subject, emailTemplate.html);
 
     return { message: 'Quote emailed successfully', sentTo: email };
   }

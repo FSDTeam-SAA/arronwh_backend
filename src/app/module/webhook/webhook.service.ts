@@ -122,6 +122,8 @@ import type { Response } from 'express';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
 import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
+import { createQuoteSummaryContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class WebhookService {
@@ -135,6 +137,7 @@ export class WebhookService {
     private readonly bookingModel: Model<BookingDocument>,
     @InjectModel(Quote.name)
     private readonly quoteModel: Model<QuoteDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   async handleWebhook(rawBody: Buffer, sig: string, res: Response) {
@@ -201,11 +204,17 @@ export class WebhookService {
       status: 'confirmed',
     });
 
-    const html = quoteEmailTemplate(quote);
+    const fallbackHtml = quoteEmailTemplate(quote);
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'quote-summary',
+      fallbackSubject: 'Your payment is successful',
+      fallbackHtml,
+      context: createQuoteSummaryContext(quote),
+    });
     await sendMailer(
       quote.personalInfo?.email!,
-      'Your payment is successful',
-      html,
+      emailTemplate.subject,
+      emailTemplate.html,
     );
   }
 
@@ -249,11 +258,17 @@ export class WebhookService {
     const quote = await this.quoteModel.findById(booking.quote);
     if (!quote) return;
 
-    const html = quoteEmailTemplate(quote);
+    const fallbackHtml = quoteEmailTemplate(quote);
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'quote-summary',
+      fallbackSubject: 'Your payment is successful',
+      fallbackHtml,
+      context: createQuoteSummaryContext(quote),
+    });
     await sendMailer(
       quote.personalInfo?.email!,
-      'Your payment is successful',
-      html,
+      emailTemplate.subject,
+      emailTemplate.html,
     );
   }
 }
