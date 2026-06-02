@@ -18,6 +18,8 @@ import { IFilterParams } from 'src/app/helpers/pick';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import { invoiceHtmlTemplate } from 'src/app/helpers/invoice-html.template';
 import { invoiceEmailWrapper } from 'src/app/helpers/invoice-email.template';
+import { createInvoiceWrapperContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 // ─── Typed item shapes matching the updated entity ───────────────────────────
 
@@ -38,6 +40,7 @@ export class InvoiceService {
 
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -177,9 +180,22 @@ export class InvoiceService {
     await this.upsertCustomerAsUser(savedInvoice.customerInfo as CreateInvoiceDto['customerInfo']);
 
     const invoiceHtml = this.buildHtml(savedInvoice);
-    const emailHtml   = invoiceEmailWrapper(invoiceHtml, savedInvoice.invoiceNumber);
+    const fallbackSubject = `Your Invoice ${savedInvoice.invoiceNumber} – Yolo Heat`;
+    const fallbackHtml = invoiceEmailWrapper(
+      invoiceHtml,
+      savedInvoice.invoiceNumber,
+    );
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'invoice-email-wrapper',
+      fallbackSubject,
+      fallbackHtml,
+      context: createInvoiceWrapperContext(
+        invoiceHtml,
+        savedInvoice.invoiceNumber,
+      ),
+    });
 
-    await sendMailer(email, `Your Invoice ${savedInvoice.invoiceNumber} – Yolo Heat`, emailHtml);
+    await sendMailer(email, emailTemplate.subject, emailTemplate.html);
 
     return savedInvoice;
   }
@@ -281,9 +297,16 @@ export class InvoiceService {
     if (!email) throw new HttpException('No email address on this invoice.', 400);
 
     const invoiceHtml = this.buildHtml(invoice);
-    const emailHtml   = invoiceEmailWrapper(invoiceHtml, invoice.invoiceNumber);
+    const fallbackSubject = `Your Invoice ${invoice.invoiceNumber} – Yolo Heat`;
+    const fallbackHtml = invoiceEmailWrapper(invoiceHtml, invoice.invoiceNumber);
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'invoice-email-wrapper',
+      fallbackSubject,
+      fallbackHtml,
+      context: createInvoiceWrapperContext(invoiceHtml, invoice.invoiceNumber),
+    });
 
-    await sendMailer(email, `Your Invoice ${invoice.invoiceNumber} – Yolo Heat`, emailHtml);
+    await sendMailer(email, emailTemplate.subject, emailTemplate.html);
 
     await this.invoiceModel.findByIdAndUpdate(id, { emailedAt: new Date() });
 

@@ -6,10 +6,12 @@ import { Payment, PaymentSchema } from './entities/payment.entity';
 import { AuthModule } from '../auth/auth.module';
 import { Booking, BookingSchema } from '../booking/entities/booking.entity';
 import { Quote, QuoteSchema } from '../quote/entities/quote.entity';
+import { EmailTemplateModule } from '../email-template/email-template.module';
 
 @Module({
   imports: [
     AuthModule,
+    EmailTemplateModule,
     MongooseModule.forFeature([
       { name: Payment.name, schema: PaymentSchema },
       { name: Booking.name, schema: BookingSchema },
