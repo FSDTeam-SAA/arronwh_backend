@@ -8,6 +8,8 @@ import { Quote } from './entities/quote.entity';
 import { Payment } from '../payment/entities/payment.entity';
 import sendMailer from 'src/app/helpers/sendMailer';
 import { buildFollowUpEmail } from 'src/app/helpers/template';
+import { createFollowUpContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class QuoteCronService {
@@ -16,6 +18,7 @@ export class QuoteCronService {
   constructor(
     @InjectModel(Quote.name) private quoteModel: Model<Quote>,
     @InjectModel(Payment.name) private paymentModel: Model<Payment>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   onModuleInit() {
@@ -169,12 +172,19 @@ export class QuoteCronService {
       const quoteTotal = this.calculateQuoteTotal(quote);
 
       try {
-        const html = buildFollowUpEmail(name, quoteTotal, false, {
+        const items = {
           product: quote.productId as any,
           controller: quote.controller as any,
           extra: quote.extra as any,
+        };
+        const fallbackHtml = buildFollowUpEmail(name, quoteTotal, false, items);
+        const emailTemplate = await this.emailTemplateService.render({
+          key: 'follow-up-first',
+          fallbackSubject: 'Still thinking? Your quote is saved!',
+          fallbackHtml,
+          context: createFollowUpContext(name, quoteTotal, items),
         });
-        await sendMailer(email, 'Still thinking? Your quote is saved!', html);
+        await sendMailer(email, emailTemplate.subject, emailTemplate.html);
         this.logger.log(`First follow-up sent to ${email}`);
       } catch (err) {
         this.logger.error(`Failed to send first follow-up to ${email}`, err);
@@ -196,12 +206,19 @@ export class QuoteCronService {
       const quoteTotal = this.calculateQuoteTotal(quote);
 
       try {
-        const html = buildFollowUpEmail(name, quoteTotal, true, {
+        const items = {
           product: quote.productId as any,
           controller: quote.controller as any,
           extra: quote.extra as any,
+        };
+        const fallbackHtml = buildFollowUpEmail(name, quoteTotal, true, items);
+        const emailTemplate = await this.emailTemplateService.render({
+          key: 'follow-up-final',
+          fallbackSubject: 'Last reminder - your boiler quote is ready',
+          fallbackHtml,
+          context: createFollowUpContext(name, quoteTotal, items),
         });
-        await sendMailer(email, 'Last reminder - your boiler quote is ready', html);
+        await sendMailer(email, emailTemplate.subject, emailTemplate.html);
         this.logger.log(`Second follow-up sent to ${email}`);
       } catch (err) {
         this.logger.error(`Failed to send second follow-up to ${email}`, err);

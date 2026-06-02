@@ -485,6 +485,8 @@ import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import { Quote, QuoteDocument } from '../quote/entities/quote.entity';
 import { quoteEmailTemplate } from 'src/app/helpers/quoteEmailTemplate';
 import sendMailer from 'src/app/helpers/sendMailer';
+import { createQuoteSummaryContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class PaymentService {
@@ -497,6 +499,7 @@ export class PaymentService {
     private readonly bookingModel: Model<BookingDocument>,
     @InjectModel(Quote.name)
     private readonly quoteModel: Model<QuoteDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {
     this.stripe = new Stripe(config.stripe.secretKey!);
   }
@@ -590,14 +593,21 @@ export class PaymentService {
 
     const paymentIntent =
       await this.stripe.paymentIntents.create(paymentIntentPayload);
-    const html = quoteEmailTemplate(quote);
+    const fallbackHtml = quoteEmailTemplate(quote);
+    const templateContext = createQuoteSummaryContext(quote);
     const email = quote.personalInfo?.email;
     // 6. Save or update payment record
     if (existingPending) {
       existingPending.stripePaymentIntentId = paymentIntent.id;
       existingPending.amount = booking.price;
       //send email to user if payment intent already exists but not completed yet
-      await sendMailer(email!, 'Your pending payment is completed', html);
+      const emailTemplate = await this.emailTemplateService.render({
+        key: 'quote-summary',
+        fallbackSubject: 'Your pending payment is completed',
+        fallbackHtml,
+        context: templateContext,
+      });
+      await sendMailer(email!, emailTemplate.subject, emailTemplate.html);
       await existingPending.save();
     } else {
       await this.paymentModel.create({
@@ -610,7 +620,13 @@ export class PaymentService {
         status: 'pending',
       });
       //send email to user if payment intent created successfully
-      await sendMailer(email!, 'Your payment intent is created', html);
+      const emailTemplate = await this.emailTemplateService.render({
+        key: 'quote-summary',
+        fallbackSubject: 'Your payment intent is created',
+        fallbackHtml,
+        context: templateContext,
+      });
+      await sendMailer(email!, emailTemplate.subject, emailTemplate.html);
     }
 
     // 7. Create Stripe Payment Link for Apple Pay
