@@ -29,11 +29,6 @@ lerna-debug.log*
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
 
 # dotenv environment variable files
 .env.development.local
@@ -42,8 +37,6 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
-.env.local
-.env
 
 # Runtime data
 pids
@@ -90,11 +83,6 @@ config.bat
 # *.sublime-workspace
 
 # # IDE - VSCode
-# .vscode/*
-# !.vscode/settings.json
-# !.vscode/tasks.json
-# !.vscode/launch.json
-# !.vscode/extensions.json
 
 # # dotenv environment variable files
 # .env.development.local
@@ -116,3 +104,7 @@ config.bat
 
 # .vercel
 # config.bat
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
