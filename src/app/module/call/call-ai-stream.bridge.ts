@@ -7,7 +7,7 @@ dotenv.config();
 
 
 const WebSocket = require('ws');
-const ffmpegPath = require('ffmpeg-static');
+import ffmpegPath  from 'ffmpeg-static';
 
 const AI_CHATBOT_URL =
   process.env.AI_CHATBOT_URL || 'http://72.62.213.212:8000/api/voice/quote-follow-up';
@@ -443,7 +443,7 @@ export function setupCallAiStreamBridge(server: Server) {
       body.set('session_id', sessionId);
 
       const response = await axios.post(AI_CHATBOT_INITIAL_URL, body, {
-        timeout: 30000,
+        timeout: 10000,
         responseType: 'arraybuffer',
         transformResponse: [(data) => data],
         headers: {
@@ -466,7 +466,7 @@ export function setupCallAiStreamBridge(server: Server) {
       body.set('audio', new Blob([audioArrayBuffer], { type: 'audio/wav' }), 'user-audio.wav');
 
       const response = await axios.post(AI_CHATBOT_URL, body, {
-        timeout: 30000,
+        timeout: 10000,
         responseType: 'arraybuffer',
         transformResponse: [(data) => data],
         headers: {

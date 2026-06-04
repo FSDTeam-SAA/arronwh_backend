@@ -111,6 +111,17 @@ export class CallService {
   ): Promise<CallLogDocument | null> {
     const status = this.normalizeCallStatus(callbackDto.CallStatus);
 
+     if (status === CallStatus.IN_PROGRESS && callbackDto.CallSid) {
+      try {
+        await this.client.calls(callbackDto.CallSid).recordings.create({
+          recordingChannels: 'dual',
+        });
+        this.logger.log(`Recording started for ${callbackDto.CallSid}`);
+      } catch (err) {
+        this.logger.error('Failed to start recording', err);
+      }
+    }
+
     const updatedLog = await this.callLogModel.findOneAndUpdate(
       { twilioCallSid: callbackDto.CallSid },
       {

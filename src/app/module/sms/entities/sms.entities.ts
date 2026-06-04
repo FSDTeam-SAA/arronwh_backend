@@ -4,7 +4,12 @@ import { HydratedDocument } from 'mongoose';
 export type SmsLogDocument = HydratedDocument<SmsLog>;
 
 export enum SmsStatus {
+  ACCEPTED = 'accepted',
+  QUEUED = 'queued',
+  SENDING = 'sending',
   SENT = 'sent',
+  DELIVERED = 'delivered',
+  UNDELIVERED = 'undelivered',
   FAILED = 'failed',
 }
 
@@ -23,12 +28,24 @@ export class SmsLog {
 
   @Prop({
     enum: SmsStatus,
-    default: SmsStatus.SENT,
+    default: SmsStatus.QUEUED,
   })
   status: SmsStatus;
 
   @Prop()
   errorMessage: string;
+
+  @Prop()
+  errorCode: string;
+
+  @Prop()
+  from: string;
+
+  @Prop()
+  sentAt: Date;
+
+  @Prop()
+  deliveredAt: Date;
 
   createdAt: Date;
 }
