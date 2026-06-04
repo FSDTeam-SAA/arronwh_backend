@@ -9,25 +9,37 @@ import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import sendMailer from 'src/app/helpers/sendMailer';
 import { buildReferEmail } from 'src/app/helpers/template';
+import { createReferContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class ReferService {
   constructor(
     @InjectModel(Refer.name)
     private readonly referModel: Model<ReferDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   async createRefer(createReferDto: CreateReferDto) {
     const result = await this.referModel.create(createReferDto);
-    const html = buildReferEmail(
+    const fallbackHtml = buildReferEmail(
       createReferDto.name,
       createReferDto.referred_by,
     );
+    const email = await this.emailTemplateService.render({
+      key: 'refer-friend',
+      fallbackSubject: 'You have been referred to YOLO HEAT',
+      fallbackHtml,
+      context: createReferContext(
+        createReferDto.name,
+        createReferDto.referred_by,
+      ),
+    });
 
     await sendMailer(
       createReferDto.email,
-      'You have been referred to YOLO HEAT',
-      html,
+      email.subject,
+      email.html,
     );
 
     return result;

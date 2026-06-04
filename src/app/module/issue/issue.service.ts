@@ -10,12 +10,15 @@ import buildWhereConditions from 'src/app/helpers/buildWhereConditions';
 import config from 'src/app/config';
 import sendMailer from 'src/app/helpers/sendMailer';
 import { issueEmailTemplate } from 'src/app/helpers/issueEmailTemplate';
+import { createIssueContext } from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 @Injectable()
 export class IssueService {
   constructor(
     @InjectModel(Issue.name)
     private readonly issueModel: Model<IssueDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   async createIssue(createIssueDto: CreateIssueDto) {
@@ -23,8 +26,15 @@ export class IssueService {
     const adminEmail = config.email.admin;
 
     if (adminEmail) {
-      const html = issueEmailTemplate(createIssueDto);
-      await sendMailer(adminEmail, 'New issue submitted - YOLO HEAT', html);
+      const fallbackHtml = issueEmailTemplate(createIssueDto);
+      const email = await this.emailTemplateService.render({
+        key: 'issue-notification',
+        fallbackSubject: 'New issue submitted - YOLO HEAT',
+        fallbackHtml,
+        context: createIssueContext(createIssueDto),
+      });
+
+      await sendMailer(adminEmail, email.subject, email.html);
     }
 
     return result;

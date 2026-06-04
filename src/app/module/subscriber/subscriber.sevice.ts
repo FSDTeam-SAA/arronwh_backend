@@ -16,6 +16,12 @@ import sendMailer from 'src/app/helpers/sendMailer';
 import { buildEmailHtml } from 'src/app/helpers/template';
 import config from 'src/app/config';
 import * as puppeteer from 'puppeteer';
+import {
+  createCallbackContext,
+  createManualQuoteContext,
+  createSubscriberBroadcastContext,
+} from '../email-template/email-template.context';
+import { EmailTemplateService } from '../email-template/email-template.service';
 
 const subscriberSearchAbleFields = ['email', 'firstName', 'status', 'postcode'];
 
@@ -30,6 +36,7 @@ export class SubscriberService {
 
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly emailTemplateService: EmailTemplateService,
   ) {}
 
   private escapeHtml(value = '') {
@@ -503,14 +510,30 @@ export class SubscriberService {
         batch.map((customer) => {
           const displayName = customer.fullName?.trim() || customer.email;
 
-          // const html = quoteEmailTemplate(quote, parsedPrice, parsedUrl);
-          const html = buildEmailHtml(
+          const fallbackHtml = buildEmailHtml(
             displayName,
             sendMessageDto.message,
             sendMessageDto.attachmentUrl,
           );
+          const context = {
+            ...createSubscriberBroadcastContext(
+              displayName,
+              sendMessageDto.message,
+              sendMessageDto.attachmentUrl,
+            ),
+            'message.subject': sendMessageDto.subject,
+          };
 
-          return sendMailer(customer.email, sendMessageDto.subject, html);
+          return this.emailTemplateService
+            .render({
+              key: 'subscriber-broadcast',
+              fallbackSubject: sendMessageDto.subject,
+              fallbackHtml,
+              context,
+            })
+            .then((emailTemplate) =>
+              sendMailer(customer.email, emailTemplate.subject, emailTemplate.html),
+            );
         }),
       );
 
@@ -555,9 +578,19 @@ export class SubscriberService {
         500,
       );
     }
-    const html = this.buildCallbackEmailHtml(callbackMessageDto);
+    const fallbackHtml = this.buildCallbackEmailHtml(callbackMessageDto);
+    const context = {
+      ...createCallbackContext(callbackMessageDto),
+      'callback.subject': callbackMessageDto.subject,
+    };
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'callback-request',
+      fallbackSubject: callbackMessageDto.subject,
+      fallbackHtml,
+      context,
+    });
 
-    await sendMailer(recipient, callbackMessageDto.subject, html);
+    await sendMailer(recipient, emailTemplate.subject, emailTemplate.html);
 
     return {
       name: callbackMessageDto.name,
@@ -575,8 +608,17 @@ export class SubscriberService {
       throw new HttpException('No email address found on this quote', 400);
     }
 
-    const html = this.buildManuallaySendEmailHtml(dto.description, quote);
-    await sendMailer(email, 'Your YOLO HEAT quote details', html);
+    const fallbackHtml = this.buildManuallaySendEmailHtml(
+      dto.description,
+      quote,
+    );
+    const emailTemplate = await this.emailTemplateService.render({
+      key: 'manual-quote-details',
+      fallbackSubject: 'Your YOLO HEAT quote details',
+      fallbackHtml,
+      context: createManualQuoteContext(dto.description, quote),
+    });
+    await sendMailer(email, emailTemplate.subject, emailTemplate.html);
 
     return {
       quoteId: dto.quoteId,
