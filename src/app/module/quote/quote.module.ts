@@ -14,9 +14,11 @@ import { Payment, PaymentSchema } from '../payment/entities/payment.entity';
 import { QuoteCronService } from './quote.cron.service';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { Refer, ReferSchema } from '../refer/entities/refer.entity';
+import { EmailTemplateModule } from '../email-template/email-template.module';
 
 @Module({
   imports: [
+    EmailTemplateModule,
     MongooseModule.forFeature([
       { name: Quote.name, schema: QuoteSchema },
       { name: Product.name, schema: ProductSchema },
