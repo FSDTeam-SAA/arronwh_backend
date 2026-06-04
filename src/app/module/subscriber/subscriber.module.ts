@@ -11,9 +11,11 @@ import {
 } from '../controller/entities/controller.entities';
 import { Extra, ExtraSchema } from '../extra/entities/extra.entities';
 import { User, UserSchema } from '../user/entities/user.entity';
+import { EmailTemplateModule } from '../email-template/email-template.module';
 
 @Module({
   imports: [
+    EmailTemplateModule,
     MongooseModule.forFeature([
       { name: Subscriber.name, schema: SubscriberSchema },
       { name: Quote.name, schema: QuoteSchema },
