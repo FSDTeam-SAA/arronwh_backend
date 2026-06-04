@@ -49,7 +49,8 @@ export class CallService {
       recordingCallbackUrl || this.getHttpWebhookUrl('/api/v1/call/recording');
     const shouldRecordCall =
       Boolean(resolvedRecordingCallbackUrl) &&
-      (Boolean(recordingCallbackUrl) || this.getBooleanConfig('TWILIO_RECORD_CALLS'));
+      (Boolean(recordingCallbackUrl) ||
+        this.getBooleanConfig('TWILIO_RECORD_CALLS', true));
 
     const log = new this.callLogModel({
       to,
@@ -74,14 +75,22 @@ export class CallService {
         }),
         ...(shouldRecordCall && {
           record: true,
+          recordingChannels: 'dual',
+          recordingTrack: 'both',
           recordingStatusCallback: resolvedRecordingCallbackUrl,
           recordingStatusCallbackMethod: 'POST',
+          recordingStatusCallbackEvent: ['in-progress', 'completed', 'absent'],
         }),
       });
 
       log.twilioCallSid = response.sid;
       log.status = CallStatus.INITIATED;
       this.logger.log(`Call initiated to ${to} | SID: ${response.sid}`);
+      if (shouldRecordCall) {
+        this.logger.log(
+          `Call recording enabled | SID: ${response.sid} | callback: ${resolvedRecordingCallbackUrl}`,
+        );
+      }
     } catch (error) {
       log.status = CallStatus.FAILED;
       log.errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -101,6 +110,17 @@ export class CallService {
     callbackDto: CallStatusCallbackDto,
   ): Promise<CallLogDocument | null> {
     const status = this.normalizeCallStatus(callbackDto.CallStatus);
+
+     if (status === CallStatus.IN_PROGRESS && callbackDto.CallSid) {
+      try {
+        await this.client.calls(callbackDto.CallSid).recordings.create({
+          recordingChannels: 'dual',
+        });
+        this.logger.log(`Recording started for ${callbackDto.CallSid}`);
+      } catch (err) {
+        this.logger.error('Failed to start recording', err);
+      }
+    }
 
     const updatedLog = await this.callLogModel.findOneAndUpdate(
       { twilioCallSid: callbackDto.CallSid },
@@ -158,6 +178,9 @@ export class CallService {
         }),
         ...(callbackDto.RecordingStatus && {
           recordingStatus: callbackDto.RecordingStatus,
+        }),
+        ...(callbackDto.ErrorCode && {
+          errorMessage: `Recording error: ${callbackDto.ErrorCode}`,
         }),
       },
       { returnDocument: 'after' },
@@ -269,9 +292,15 @@ export class CallService {
     return `${webhookBaseUrl.replace(/\/$/, '')}${path}`;
   }
 
-  private getBooleanConfig(key: string): boolean {
+  private getBooleanConfig(key: string, defaultValue = false): boolean {
+    const value = this.getConfigValue(key);
+
+    if (value === undefined) {
+      return defaultValue;
+    }
+
     return ['1', 'true', 'yes', 'on'].includes(
-      String(this.getConfigValue(key) || '').toLowerCase(),
+      value.toLowerCase(),
     );
   }
 

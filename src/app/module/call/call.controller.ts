@@ -20,6 +20,7 @@ import {
   MakeCallDto,
 } from './dto/create.dto';
 import { CallLogDocument } from './entities/call.entities';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('call')
 @Controller('call')
@@ -33,6 +34,7 @@ export class CallController {
   @ApiResponse({ status: 400, description: 'Invalid call payload' })
   @ApiResponse({ status: 500, description: 'Failed to initiate call' })
   @UsePipes(new ValidationPipe({ whitelist: true }))
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 calls per minute
   async makeCall(
     @Body() makeCallDto: MakeCallDto,
   ): Promise<{ success: boolean; data: CallLogDocument }> {

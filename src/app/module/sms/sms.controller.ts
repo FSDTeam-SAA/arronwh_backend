@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SmsService } from './sms.service';
 import { SendSmsDto } from './dto/create.dto';
@@ -20,6 +28,16 @@ export class SmsController {
   async sendSms(@Body() sendSmsDto: SendSmsDto): Promise<{ success: boolean; data: SmsLogDocument }> {
     const data = await this.smsService.sendSms(sendSmsDto);
     return { success: true, data };
+  }
+
+  @Post('status')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Twilio SMS delivery status callback' })
+  async handleSmsStatus(
+    @Body() payload: Record<string, string>,
+  ): Promise<{ success: boolean }> {
+    await this.smsService.updateSmsStatus(payload);
+    return { success: true };
   }
 
   @Get('logs')
